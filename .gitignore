@@ -1,0 +1,5 @@
+*.bak
+*~
+compiled/
+~$*
+project_solutions/

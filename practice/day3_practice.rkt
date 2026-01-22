@@ -49,10 +49,13 @@
 ;;; Hint: Your cond should have three clauses:
 ;;;   1. Check if the list is empty
 ;;;   2. Check if the first element matches
-;;;   3. Otherwise, recurse on the rest of the list
+;;;   3. Otherwise, recurse on the rest of the list (#t EXPR)
 
 ; Your code here:
-
+(define (contains? a lst)
+  (cond [(null? lst) #f]
+        [(eq? (car lst) a) #t]
+        [else (contains? a (cdr lst))]))
 
 ; Test cases:
 ; (contains? 3 '(1 2 3 4))   ; should be #t

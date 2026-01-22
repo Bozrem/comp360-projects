@@ -127,9 +127,9 @@
 (define (contains? a lst)
   (if (null? lst)
       #f
-      (if (eq? (car lst) a)
+      (if (eq? (first lst) a)
           #t
-          (contains? a (cdr lst)))))
+          (contains? a (rest lst)))))
 
 "test contains?"
 (contains? 3 '(1 2 3 4))
