@@ -1,6 +1,7 @@
 #lang racket
 (require 2htdp/image)
 (require 2htdp/universe)
+(require lang/posn)
 
 (provide (all-defined-out))
 
@@ -44,16 +45,66 @@
 ;;; Part 2: Combining Shapes
 
 ; 2.1: Traffic Light
-
+(define (traffic-light)
+  (above
+    (circle 100 "solid" "red")
+    (circle 100 "solid" "yellow")
+    (circle 100 "solid" "green")
+    )
+  )
 
 ; 2.2: Simple House
-
+(define (simple-house)
+  (above
+    (isosceles-triangle 100 120 "solid" "red")
+    (square 100 "solid" "brown")
+    )
+  )
 
 ; 2.3: Tree
+(define (tree)
+  (define trunk (rectangle 50 150 "solid" "brown"))
+  (define leaves (isosceles-triangle 200 55 "solid" "medium forest green")) ;; Found the fancy list https://docs.racket-lang.org/draw/color-database___.html
 
+  (overlay/offset leaves 0 50 trunk)
+  )
 
 ; 2.4: Car
+(define (simple-car)
+  (define wheel (make-bullseye 35 0 0 0 45 100 100 100))
 
+  (define body (polygon (list
+        (make-posn 0 280)   ;; Front bumper
+        (make-posn 0 220)   ;; Hood front
+        (make-posn 100 190) ;; Hood slant ends
+        (make-posn 180 190) ;; Base of windshield
+        (make-posn 260 150) ;; Top of windshield
+        (make-posn 340 150) ;; End of roof
+        (make-posn 440 170) ;; End of back window
+        (make-posn 500 170) ;; Spoiler
+        (make-posn 500 250) ;; Trunk
+        (make-posn 430 300) ;; Slope back to tire
+        (make-posn 30 300)  ;; Base of car
+      )
+      "solid"
+      "dodger blue")) ;; Couldn't not use this name
+
+  (define window (polygon (list
+        (make-posn 170 200) ;; Base of windshield
+        (make-posn 250 160) ;; Top of windshield
+        (make-posn 330 160) ;; End of roof
+        (make-posn 420 180) ;; End of back window
+        (make-posn 410 200)
+      )
+      "solid"
+      "white smoke"))
+
+  (define bw (overlay/offset window -55 45 body))
+
+  (define bw_lwheel (overlay/offset wheel 175 -55 bw))
+
+  (overlay/offset wheel -150 -45 bw_lwheel)
+  )
 
 
 
