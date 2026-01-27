@@ -239,38 +239,49 @@
 
 ; Make something cool!
 
-;;; Example: I used AI for a very small slice of my scene.
-;;;          If you want to see my conversation, I am happy to show it to you.
+;; Idea scratchpad for my scene:
+;;
+;; I want to use the big bang universe
+;; I want to have a continuously moving background of:
+;;    Road
+;;        Do yellow dashes (rhombuses to give sense of distance)
+;;    Sky
+;;        Maybe add a cloud thing that generates random cloud shapes
+;;    Ground
+;;        Can probably just do a plain earthy green, or a brown
+;;    Trees
+;;        Very similar to the forest
+;;        Continual generation
+;;        Sparsity value determines trees added per movement
+;;
+;; The foreground:
+;;    Car
+;;        I can do my car, and have it bob a little bit up and down for movement
+;;        If I want to get really fancy, I can do two stages of tire to roll them
+;;
+;;    Additional front facing things
+;;        Maybe some bushes in front?
+;;
+;;
+;; Strategy:
+;;    I'd like to abstract away the rendering to only take in a single object for existing images
+;;    An added image should have the following properties
+;;        Image
+;;        X val
+;;        Y val
+;;        Age (ticks)
+;;
+;;    If we keep each type of image in a separate list of just those
+;;    we can access the "time since last sent" as just the age of the first in that list
+;;
+;;    Each type of thing added to game should consist of three parts:
+;;        List of currently added objects
+;;        A renderer (how to draw each one of those objects)
+;;          Given some list of these objects and the background image, draw them onto it
+;;        An Updater (how it should change with each tick)
+;;          Given a list of objects, update each one
 
-(define (scene width depth color rotation)
-  (define (darker color-list by) ; rewritten for more control
-    (make-color (floor (* (car by) (car color-list))) ; R
-                (floor (* (car (cdr by)) (car (cdr color-list)))) ; G
-                (floor (* (car (cdr (cdr by))) (car (cdr (cdr color-list))))))) ; B
-  
-  ; scale-factor is a function written by me but
-  ; mathematically described by Claude AI
-  (define scale-factor (/ 1 (+
-                             (cos (degrees->radians (abs rotation)))
-                             (sin (degrees->radians (abs rotation))))))
-  
-  (define new-width (* width scale-factor))
+;; I used this chat for some strategizing: https://gemini.google.com/share/fe7102f784b8
 
-  (define (color->color-list c) ; for use with darker
-    (list (color-red c) (color-green c) (color-blue c)))
-  
-  (if (= depth 0) ; main
-      (rectangle width width "solid" color)
-      (overlay (rotate rotation (scene new-width
-                                       (- depth 1)
-                                       (darker (color->color-list color) '(0.7 0.7 0.95)) rotation))
-               (rectangle width width "solid" color)))
-  ; possible extensions:
-  ; each square has a random color
-  ; each square has a random rotation
-  ; the randomness is a tunable parameter: ex, color-randomness ranges from 0 to 1
-  ; different shapes
+(define (draw-driving )
   )
-
-
-(scene 200 6 (make-color 100 100 255) -15)
