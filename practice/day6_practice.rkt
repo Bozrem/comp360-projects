@@ -181,6 +181,14 @@
 ;;; Use an internal define for the helper.
 
 ; Your code here:
+; hint:
+(define (running-sum a)
+  (define (helper a acc)
+    ; this function does all the heavy lifting
+    (cond (#f 'what?)
+          (else 'else? ; try using let to define the new accumulator value: (+ (car a) acc)
+    )
+  (helper a 0) ; our main function simply calls the helper
 
 
 ;;; ============================================================

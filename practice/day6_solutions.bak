@@ -198,7 +198,7 @@
 
 
 ;;; ============================================================
-;;; PROBLEM 6: Combining Internal Define with Recursion
+;;; PROBLEM 6: Combining let with Recursion
 ;;; ============================================================
 
 ;;; Write a function `running-sum` that takes a list of numbers and
@@ -216,18 +216,7 @@
 ;;; Use an internal define for the helper.
 
 ; Your code here:
-(define (running-sum a)
-  (define (helper a acc)
-    (cond ((null? a) '())
-          (else (let ((new-acc (+ (car a) acc)))
-                  (cons new-acc (helper (cdr a) new-acc))))))
-  (helper a 0))
 
-"running-sum test"
-(running-sum '(1 2 3 4))
-(running-sum '(5 5 5))
-(running-sum '(1))
-(running-sum '())
 
 ;;; ============================================================
 ;;; PROBLEM 7: Scope Challenge

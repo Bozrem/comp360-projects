@@ -1,0 +1,47 @@
+#lang racket
+; Day 2
+; Functions, Pairs, and Lists
+;;; Daiily DrRacket Protip: Ctrl+Alt/Cmd+; commments; Ctrl+Alt/Cmd+= uncomments
+
+;;; Functions
+
+; Custom Power Function: only correct for y >= 0
+; Recursion!
+
+; Custom Cube Function
+
+
+;;; Pairs
+
+; Custom Pair-Swapping Function
+
+; Custom Pair-Summing Function
+
+; Custom Division Function
+
+; returning more than one value is a pain in Java
+; but it's trivial in Racket!
+; Free Lesson: if something feels hard the way you're doing it, do it differently!
+
+; Custom Pair-Sorting Function
+
+
+;;; Lists
+
+
+;;; Lists of Pairs
+
+; the next four functions assume that 
+; the argument lst is a list of pairs of numbers
+(define lst3 (list (cons 4 5) (cons 11 12) (cons 4 5) (cons 7 8)))
+lst3
+
+; Recursion! As essential Racket tool!
+; Sum Up All Pairs
+
+; Strip Off the First of Each Pair
+
+; Strip Off the Second of Each Pair
+
+; Another Way to Add All Pairs, Using firsts and seconds
+

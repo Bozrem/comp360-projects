@@ -9,28 +9,23 @@
 ;;; Part A: Predict what each expression evaluates to, then test
 ;;; in DrRacket.
 
-"lets test"
-(let ((x 5) (y 3))
-  (+ x y))
+; (let ((x 5) (y 3))
+;   (+ x y))
 ; Prediction:
-; 8
 
-(let ((x 10))
-  (let ((x 20))
-    x))
+; (let ((x 10))
+;   (let ((x 20))
+;     x))
 ; Prediction:
-; 20
 
-(define z 100)
-(let ((z 1))
-  (+ z 5))
+; (define z 100)
+; (let ((z 1))
+;   (+ z 5))
 ; Prediction:
-; 6
 
-(let ((a 4) (b 2) (c 3))
-  (* a (+ b c)))
+; (let ((a 1) (b 2) (c 3))
+;   (* a (+ b c)))
 ; Prediction:
-; 24
 
 
 ;;; Part B: The following expression causes an error. Explain why,
@@ -41,12 +36,9 @@
 
 ; Why does this cause an error?
 ; Your explanation:
-; let won't allow use of defined variables in subsequent definitions
 
 ; Fixed version using let*:
 ; Your code here:
-(let* ((x 5) (y (+ x 1)))
-  (* x y))
 
 
 ;;; ============================================================
@@ -55,30 +47,27 @@
 
 ;;; Predict the value of each expression. Pay careful attention
 ;;; to which binding of each variable is in scope.
-"shadow test"
-(define x 10)
-(define y 20)
 
-(let ((x 1))
-  (+ x y))
+; (define x 10)
+; (define y 20)
+;
+; (let ((x 1))
+;   (+ x y))
 ; Prediction:
-; 21
 
-(let ((x 1))
-  (let ((y 2))
-    (+ x y)))
+; (let ((x 1))
+;   (let ((y 2))
+;     (+ x y)))
 ; Prediction:
-; 3
 
-(let ((x 1) (y x))   ; Note: uses let, not let*
-  (+ x y))
+; (let ((x 1) (y x))   ; Note: uses let, not let*
+;   (+ x y))
 ; Prediction (assuming x is defined as 10 above):
-; 11
 
-(let* ((x 1) (y x))  ; Note: uses let*
-  (+ x y))
+; (let* ((x 1) (y x))  ; Note: uses let*
+;   (+ x y))
 ; Prediction:
-; 2
+
 
 ;;; ============================================================
 ;;; PROBLEM 3: Using let Inside Functions
@@ -96,14 +85,7 @@
 ;;;   (cylinder-volume 0 5)  => 0
 
 ; Your code here:
-"cylinder  test"
-(define (cylinder-volume r h)
-  (let ((pi 3.14159))
-    (* pi r r h)))
 
-(cylinder-volume 1 1)
-(cylinder-volume 2 3)
-(cylinder-volume 0 5)
 
 ;;; Write a function `quadratic-roots-exist?` that takes three
 ;;; numbers a, b, and c (coefficients of ax^2 + bx + c) and returns
@@ -119,15 +101,7 @@
 ;;;   (quadratic-roots-exist? 1 -5 6)  => #t  (x^2 - 5x + 6 = 0 has roots)
 
 ; Your code here:
-(define (quadratic-roots-exist? a b c)
-  (let ((determinant (- (* b b) (* 4 a c))))
-    (if (>= determinant 0)
-        #t
-        #f)))
 
-(quadratic-roots-exist? 1 0 -1)
-(quadratic-roots-exist? 1 0 1)
-(quadratic-roots-exist? 1 -5 6)
 
 ;;; ============================================================
 ;;; PROBLEM 4: Internal Defines (Helper Functions)
@@ -153,12 +127,7 @@
   (define (get-y pt) (cdr pt))
   (define (square n) (* n n))
   ; Now write the body using these helpers:
-  (sqrt (+ (square (- (get-x p1) (get-x p2))) (square (- (get-y p1) (get-y p2))))))
-
-"distance test"
-(distance (cons 0 0) (cons 3 4))
-(distance (cons 1 1) (cons 1 1))
-(distance (cons 0 0) (cons 1 1))
+  'replace-me)
 
 
 ;;; ============================================================
@@ -182,23 +151,19 @@
 
 ;;; Part B: Rewrite find-max to be efficient using let.
 ;;; (This is the good-max example from the slides. Try to write it without reference.)
+
 (define (good-max lst)
-  (cond ((null? (cdr lst)) (car lst))
-        (else
-         (let ((max-rest (good-max (cdr lst))))
-           (cond ((> (car lst) max-rest) (car lst))
-                 (else max-rest))))))
-    
+  ; Your code here - use let to avoid repeated recursion
+  'replace-me)
 
 ; Test cases:
-"good-max test"
-(good-max '(1 2 3 4 5))
-(good-max '(5 4 3 2 1))
-(good-max '(3 1 4 1 5 9)) 
+; (good-max '(1 2 3 4 5))    => 5
+; (good-max '(5 4 3 2 1))    => 5
+; (good-max '(3 1 4 1 5 9))  => 9
 
 
 ;;; ============================================================
-;;; PROBLEM 6: Combining Internal Define with Recursion
+;;; PROBLEM 6: Combining let with Recursion
 ;;; ============================================================
 
 ;;; Write a function `running-sum` that takes a list of numbers and
@@ -216,18 +181,7 @@
 ;;; Use an internal define for the helper.
 
 ; Your code here:
-(define (running-sum a)
-  (define (helper a acc)
-    (cond ((null? a) '())
-          (else (let ((new-acc (+ (car a) acc)))
-                  (cons new-acc (helper (cdr a) new-acc))))))
-  (helper a 0))
 
-"running-sum test"
-(running-sum '(1 2 3 4))
-(running-sum '(5 5 5))
-(running-sum '(1))
-(running-sum '())
 
 ;;; ============================================================
 ;;; PROBLEM 7: Scope Challenge

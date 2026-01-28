@@ -1,0 +1,24 @@
+#lang racket
+; Day 1
+; Welcome to Racket!
+
+; add x = 3 to the current environment
+
+; adds y = 7 to the current environment
+
+; to evaluate an addition, evaluate the subexpressions and add 
+
+; to evaluate a variable, lookup its value in the environment  
+
+; evaluates (- x y), which results in -4, then
+; adds z = -4 to the current environment
+
+; evaluates the whole math expression: q = (x + 2) * (z - 3), 
+; which results in -35
+; adds q = -35 to the current environment
+
+; let's introduce control flow to compute absolute values
+
+; let's display the results of what we've done
+
+; now let's try to break things a little bit!
