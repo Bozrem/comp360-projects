@@ -11,6 +11,7 @@
 ;;; Write your example as a comment.
 
 ; Your bad syntax example here:
+; car('(1 . 2))
 
 
 ;;; Part B: Give TWO examples of Racket programs that are SYNTACTICALLY
@@ -23,10 +24,10 @@
 ;;; Write both examples below and briefly explain how their semantics differ.
 
 ; Example 1:
-
+(+ (- 1 2) (/ 4 2))
 
 ; Example 2:
-
+(cons (- 1 2) (/ 4 2))
 
 ; Explanation of how the semantics differ:
 
@@ -52,15 +53,18 @@
 ;;;   3. Otherwise, recurse on the rest of the list (#t EXPR)
 
 ; Your code here:
-(define (contains? a lst)
+[define (contains? a lst)
   (cond [(null? lst) #f]
         [(eq? (car lst) a) #t]
-        [else (contains? a (cdr lst))]))
+        [else (cond (#t 7)
+                    (#f 8))
+              ])]
+
 
 ; Test cases:
-; (contains? 3 '(1 2 3 4))   ; should be #t
-; (contains? 5 '(1 2 3 4))   ; should be #f
-; (contains? 'a '())         ; should be #f
+;(contains? 3 '(1 2 3 4))   ; should be #t
+;(contains? 5 '(1 2 3 4))   ; should be #f
+;(contains? 'a '())         ; should be #f
 
 
 ;;; ============================================================
@@ -106,7 +110,10 @@
 ;;;   - An empty list is NOT a pair: (pair? '()) => #f
 
 ; Your code here:
-
+(define (safe-car a)
+  (cond [(null? a) 'error]
+        [(or (pair? a) (list? a)) (car a)]
+        [else 'error]
 
 ; Test cases:
 ; (safe-car '(1 2 3))

@@ -3,6 +3,13 @@
 **COMP 360: Programming Languages**
 
 ---
+## Expected Effort
+
+This project took me about 2 hours of concentrated effort. If you aren't able to complete the project, I expect you to spend at least 5 hours and as many as 10 hours. If you can't complete the project within 10 hours, you should let yourself stop working. 
+
+Your effort now will pay off in the future.
+
+---
 
 ## AI Assistance Disclosure
 
