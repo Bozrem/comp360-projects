@@ -4,17 +4,26 @@
 (require "defs.rkt")
 (require "base.rkt")
 
+(provide road-base%)
+
 (define road-base%
   (class* base-obj% (scene-obj-interface)
-
     (super-new) ;; Constructor ish
 
-    (define/public (update)
-      ;; Does nothing for now
-      )
+    (inherit-field scl)
 
-    (define/public (render scene)
-      (place-image/align ROAD_BASE_IMG x-pos y-pos "left" "top" scene)
+    (define/override (render x-camera scene)
+      (define y-screen (- HORIZON_HEIGHT (* scl CAMERA_HEIGHT))) ;; horizon-y + (camera-y * scale)
+
+      (overlay/align
+        "middle" "bottom"
+        (rectangle SCENE_WIDTH y-screen "solid" ROAD_COLOR)
+        scene
+        )
+      )
+ 
+    (define/override (visible? x-camera)
+      #t ;; Background object. Always visible
       )
     )
   )

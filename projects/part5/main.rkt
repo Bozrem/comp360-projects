@@ -3,40 +3,54 @@
 (require 2htdp/image)
 (require 2htdp/universe)
 (require "defs.rkt")
-(require "car.rkt")
+(require "road.rkt")
+;; (require "car.rkt")
+
+(struct scene (objs x-cam))
 
 (define INIT_SCENE
-  (list
-    (new car% [y-pos 400])
+  (scene
+    (list
+      (new road-base% [z-pos 200] [x-world 0]) ;; x doesn't matter
+      )
+    SCENE_WIDTH ;; Initial x-cam
     )
   )
 
 ;; high-level renderer
-(define (render-scene objs)
-  (cond
-    [(empty? objs)  BACKGROUND]
-    [else           (send (first objs) render (render-scene (rest objs)))]
+(define (render-scene s)
+  (define (render-objects objs x-cam)
+    (cond
+      [(empty? objs)  (get-background)]
+      [else           (send (first objs) render x-cam (render-objects (rest objs) x-cam))]
+      )
     )
+
+  (render-objects (scene-objs s) (scene-x-cam s))
   )
 
 
 ;; high-level updater
-(define (update-scene objs)
-  (cond
-    [(empty? objs)  empty]
-    [else
-      (send (first objs) update)
-      (cons (first objs) (update-scene (rest objs)))
-      ]
+(define (update-scene s)
+  (define (update-objects objs)
+    (cond
+      [(empty? objs) empty]
+      [else 
+        (send (first objs) update) ;; On it's own line because it's a side effect of sorts
+        (cons (first objs) (update-objects (rest objs)))
+        ]
+      )
     )
+
+  (scene (update-objects (scene-objs s)) (+ (scene-x-cam s) CAM_SPEED)) ;; Update the objects and the camera pos
   )
 
 
 ;; Be able to quit with just q instead of ctrl+c
-(define (handle-quit objs key)
+(define (handle-quit s key)
   (cond
-    [(string=? key "q")   (stop-with objs)]
-    [else                 objs]
+    [(string=? key "q")   (stop-with s)]
+    [else                 s]
     )
   )
 

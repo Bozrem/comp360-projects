@@ -8,12 +8,12 @@
 ;; High definition
 (define SCENE_HEIGHT 720)
 (define SCENE_WIDTH  1280)
+
+(define CAM_SPEED 1)
+
 ;; This means that every FOCAL_LENGTH increase in Z will half the size
 (define FOCAL_LENGTH 200)
-
-;; Also TODO: Change these to parameters to make Racket happier
-(define CAMERA_HEIGHT 200) ;; TODO: Play with this value
-(define ROAD_HEIGHT 300) ;;   same
+(define CAMERA_HEIGHT 100) ;; TODO: Play with this value
 (define HORIZON_HEIGHT 500) ;; same
 
 (define ROAD_COLOR "dim gray")
@@ -40,5 +40,3 @@
 (define (show img)
   (big-bang 0 (to-draw (lambda (w) img)))
   )
-
-(show BACKGROUND)
