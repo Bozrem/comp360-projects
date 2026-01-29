@@ -33,7 +33,6 @@
 
     (init-field z-pos) ;; Required
     (init-field x-world) ;; Just the x-camera unless this is init
-    (field [scl (/ FOCAL_LENGTH (+ FOCAL_LENGTH z-pos))])
 
     (field [img empty-image]) ;; To be set by the implementations
 
@@ -44,10 +43,11 @@
 
     ;; Can be overriden for background objects (like road)
     (define/public (render x-camera scene)
+      (define scl (/ (FOCAL_LENGTH) (+ FOCAL_LENGTH z-pos)))
       (define x-screen-center (/ SCENE_WIDTH 2))
       (define x-screen (+ x-screen-center (* scl (- x-world x-camera)))) ;; (world-x - camera-x) * scale + screen-center
 
-      (define y-screen (- HORIZON_HEIGHT (* scl CAMERA_HEIGHT))) ;; horizon-y + (camera-y * scale)
+      (define y-screen (- (HORIZON_HEIGHT) (* scl (CAMERA_HEIGHT)))) ;; horizon-y + (camera-y * scale)
 
       (place-image/align
         (scale scl img)
@@ -60,6 +60,7 @@
     ;; TODO:
     ;; This feels incorrect. Gemini wrote the logic, I don't trust it.
     (define/public (visible? x-camera)
+      (define scl (/ (FOCAL_LENGTH) (+ FOCAL_LENGTH z-pos)))
       (define x-screen-center (/ SCENE_WIDTH 2))
       (define x-screen (+ x-screen-center (* scl (- x-world x-camera)))) ;; (world-x - camera-x) * scale + screen-center
 

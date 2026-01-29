@@ -47,10 +47,24 @@
 
 
 ;; Be able to quit with just q instead of ctrl+c
-(define (handle-quit s key)
+(define (handle-key s key)
   (cond
+    ;; Quitting
     [(string=? key "q")   (stop-with s)]
-    [else                 s]
+
+    ;; Camera height adjust
+    [(string=? key "w")   (begin (CAMERA_HEIGHT (+ (CAMERA_HEIGHT) 10)) s)]
+    [(string=? key "s")   (begin (CAMERA_HEIGHT (- (CAMERA_HEIGHT) 10)) s)]
+ 
+    ;; Camera tilt
+    [(string=? key "up")    (begin (HORIZON_HEIGHT (+ (HORIZON_HEIGHT) 10)) s)]
+    [(string=? key "down")  (begin (HORIZON_HEIGHT (- (HORIZON_HEIGHT) 10)) s)]
+
+    ;; Zoom
+    [(string=? key "=")   (begin (FOCAL_LENGTH (+ (FOCAL_LENGTH) 10)) s)] ;; = is just + without having to shift
+    [(string=? key "-")   (begin (FOCAL_LENGTH (- (FOCAL_LENGTH) 10)) s)] ;; 
+
+    [else   s]
     )
   )
 
@@ -58,7 +72,7 @@
 (big-bang INIT_SCENE
   (to-draw render-scene)
   (on-tick update-scene 0.5)
-  (on-key  handle-quit)
+  (on-key  handle-key)
   (close-on-stop #t) ;; lets handle quit work
   )
 

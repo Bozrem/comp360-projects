@@ -10,10 +10,11 @@
   (class* base-obj% (scene-obj-interface)
     (super-new) ;; Constructor ish
 
-    (inherit-field scl)
+    (inherit-field z-pos)
 
     (define/override (render x-camera scene)
-      (define y-screen (- HORIZON_HEIGHT (* scl CAMERA_HEIGHT))) ;; horizon-y + (camera-y * scale)
+      (define scl (/ (FOCAL_LENGTH) (+ (FOCAL_LENGTH) z-pos)))
+      (define y-screen (- (HORIZON_HEIGHT) (* scl (CAMERA_HEIGHT)))) ;; horizon-y + (camera-y * scale)
 
       (overlay/align
         "middle" "bottom"
