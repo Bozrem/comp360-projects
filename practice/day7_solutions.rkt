@@ -278,7 +278,19 @@
 ;;; the sum of GPAs and divide by the count.
 
 ; Your code here:
-
+(define (average-gpa-by-major major records)
+  (define (get-major record) (cadr record))
+  (define (get-gpa record) (caddr record))
+  (define (sum a)
+    (cond ((null? a) 0)
+          (else (+ (car a) (sum (cdr a))))))
+  (let ((majors (keep-if (lambda (x) (eq? (get-major x) major)) records))
+        ) ; majors now has only the majors we want
+    (/ (sum (transform-list get-gpa majors)) (length majors))
+    ))
+(average-gpa-by-major 'cs students)
+(average-gpa-by-major 'math students)
+(average-gpa-by-major 'physics students)
 
 ;;; ============================================================
 ;;; PROBLEM 8: Challenge - Function Composition

@@ -15,7 +15,8 @@
 
 ; (define (multiply a b) (* a b))
 ; Lambda version:
-
+; anonymous function
+(lambda (x y) (* x y)) ; a function
 
 ; (define (is-positive? n) (> n 0))
 ; Lambda version:
@@ -37,8 +38,14 @@
 ; ((lambda (f x) (f (f x))) add1 5) ; add1 is built-in, feel free to test it out!
 ; Prediction:
 
-; (let ((square (lambda (x) (* x x))))
-;   (square 6))
+(let ((square (lambda (x) (* x x))))
+  (square 6))
+(define (my-big-everything-function x y z)
+  (define (square x) (* x x))
+  (square z))
+(square 8)
+;(define (square x) (* x x))
+;(square 6)
 ; Prediction:
 
 
@@ -52,13 +59,18 @@
       0
       (+ (func a)
          (sum-any func (+ a 1) b))))
+(sum-any sqrt 5 10) ; will produce sqrt(5) + sqrt(6) + sqrt(7) + sqrt(8) + sqrt(9) + sqrt(10)
 
 ;;; Use sum-any with lambda expressions to compute each of the following.
 ;;; Do NOT define named helper functions at the top level.
 
 ;;; a. Sum of cubes from 1 to 5: 1^3 + 2^3 + 3^3 + 4^3 + 5^3 = 225
 ; Your code (should evaluate to 225):
+(define (cube x) (* x x x))
+(sum-any cube 1 5) ; cube has to be defined
 
+; or I could use an anonymous function here:
+(sum-any (lambda (x) (* x x x)) 1 5)
 
 ;;; b. Sum of (2n + 1) for n from 1 to 4: 3 + 5 + 7 + 9 = 24
 ; Your code (should evaluate to 24):
@@ -241,6 +253,10 @@
 ;;; the sum of GPAs and divide by the count.
 
 ; Your code here:
+
+
+; you need to modify students to be a comprehensive test:
+; average-finding should take more than one GPA per major!
 
 
 ;;; ============================================================

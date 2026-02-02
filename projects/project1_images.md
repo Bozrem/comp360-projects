@@ -31,6 +31,8 @@ My solutions will become avaiable on Feb 6.
 
 In this project, you'll learn Racket fundamentals while building increasingly complex images. You'll start with basic shapes and work your way up to creating an original scene that demonstrates your mastery of helper functions, data structures, recursion, and function composition.
 
+---
+
 **Getting Started:** Open `project1.rkt`. You'll see:
 
 ```racket
