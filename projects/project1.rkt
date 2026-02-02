@@ -70,8 +70,21 @@
   )
 
 ; 2.4: Car
-(define (make-car color)
-  (define wheel (make-bullseye 35 0 0 0 45 100 100 100))
+(define (make-car color wheel-angle)
+  (define wheel
+    ;(define pen (pen "black" 20 "solid" "butt" "bevel"))
+
+    (rotate wheel-angle
+      (overlay
+        (circle 40 "outline" (pen "black" 10 "solid" "butt" "bevel"))
+        (rectangle 70 5 "solid" "dark gray")
+        (rectangle 5 70 "solid" "dark gray")
+        (circle 35 "solid" "dim gray")
+        )
+      )
+    )
+
+  ;;(define wheel (make-bullseye 35 0 0 0 45 100 100 100))
 
   (define body (polygon (list
         (make-posn 0 280)   ;; Front bumper
@@ -234,54 +247,212 @@
 
 ; Test your functions before moving on!!
 
+; Scratchpad:
+;   I moved my rendering project to a different repo so that I could worry a little less about AI usage
+;   Is there a way I can do an animated driving scene easily here?
+;   My main worry is how to do the forest.
+;   For the car and road, I can simply make some static amount of images, and switch between them to "animate" motion
+;   But for my forest, it's randomly generated.
+;
+;   I think to start, I'm going to just make a random new forest, and see how bad that looks.
 
 ;;; Part 5: Your Scene
 
-; Make something cool!
+(struct state (tick car_pos)) ;; Indivual things can use (mod tick num), where num is how many different images it has
 
-;; Idea scratchpad for my scene:
-;;
-;; I want to use the big bang universe
-;; I want to have a continuously moving background of:
-;;    Road
-;;        Do yellow dashes (rhombuses to give sense of distance)
-;;    Sky
-;;        Maybe add a cloud thing that generates random cloud shapes
-;;    Ground
-;;        Can probably just do a plain earthy green, or a brown
-;;    Trees
-;;        Very similar to the forest
-;;        Continual generation
-;;        Sparsity value determines trees added per movement
-;;
-;; The foreground:
-;;    Car
-;;        I can do my car, and have it bob a little bit up and down for movement
-;;        If I want to get really fancy, I can do two stages of tire to roll them
-;;
-;;    Additional front facing things
-;;        Maybe some bushes in front?
-;;
-;;
-;; Strategy:
-;;    I'd like to abstract away the rendering to only take in a single object for existing images
-;;    An added image should have the following properties
-;;        Image
-;;        X val
-;;        Y val
-;;        Age (ticks)
-;;
-;;    If we keep each type of image in a separate list of just those
-;;    we can access the "time since last sent" as just the age of the first in that list
-;;
-;;    Each type of thing added to game should consist of three parts:
-;;        List of currently added objects
-;;        A renderer (how to draw each one of those objects)
-;;          Given some list of these objects and the background image, draw them onto it
-;;        An Updater (how it should change with each tick)
-;;          Given a list of objects, update each one
+(define HEIGHT 720)
+(define WIDTH 1280)
+(define horizon 500)
 
-;; I used this chat for some strategizing: https://gemini.google.com/share/fe7102f784b8
+(define BACKGROUND
+  (above
+    (rectangle WIDTH (- HEIGHT horizon) "solid" "sky blue")
+    (rectangle WIDTH horizon "solid" "dark olive green")
+    )
+  )
 
-(define (draw-driving )
+(define TRANS_BACKGROUND (rectangle WIDTH HEIGHT 0 "white"))
+
+
+(define (render-sky tick)
+  (define sky
+    (scale/xy
+      44 1280
+      (color-list->bitmap
+        (list "midnight blue" "blue" "light sky blue" "dark orange" "orange red")
+        5 1
+        )
+      )
+    )
+
+  (place-image
+    (circle 50 "solid" "dark orange")
+    1000 225
+    (rotate 270 sky)
+    )
+  )
+
+
+(define (render-road tick)
+  ;; 10 stage animation
+
+  ;; Some way to determine dashes
+  (define road-base (rectangle WIDTH 500 "solid" "dim gray"))
+
+  ;(define road-dash (rectangle 40 20 "solid" "gold"))
+
+  (define road-dash
+    (polygon
+      (list
+        (make-posn 0 20)
+        (make-posn 5 0)
+        (make-posn 45 0)
+        (make-posn 40 20)
+        )
+      "solid"
+      "gold"
+      )
+    )
+
+  (define dashes 10)
+  (define stages 20)
+  (define dist-per-dash (/ WIDTH dashes))
+  (define dist-per-tick (/ dist-per-dash stages))
+
+  (define stage (modulo tick stages))
+
+  (define (place-dashes dash)
+    ;; The dash count total should define the range within each dash
+    ;; It should therefore move through that range within the stages
+    ;; But then the reset should line up with the next one resetting to appear infinite
+
+    ;; (dist-per-dash * dash) becomes it's base x
+    ;; + (dist-per-tick * stage) becomes offset within the tick
+    (define dash-x (+ (* dist-per-dash dash) (- dist-per-dash (* dist-per-tick stage))))
+
+    (cond
+      [(> dash dashes)  road-base]
+      [else
+        (place-image
+          road-dash
+          dash-x 175
+          (place-dashes (+ dash 1))
+          )
+        ]
+      )
+    )
+
+  (place-dashes 0)
+  )
+
+;; Individual renderers
+(define (render-car tick)
+  (define rotation-per-tick 7)
+
+  (define wheel-rotation
+    (modulo (* tick rotation-per-tick) 360)
+    )
+
+  (define car-img (flip-horizontal (make-car "dodger blue" wheel-rotation)))
+
+  car-img
+  )
+
+
+(define (render-trees tick)
+  (define TREE (tree))
+
+  (define trees 10)
+  (define stages 30)
+  (define dist-per-tree (/ WIDTH trees))
+  (define dist-per-tick (/ dist-per-tree stages))
+
+  (define stage (modulo tick stages))
+
+  (define (place-trees tree)
+    ;; The dash count total should define the range within each dash
+    ;; It should therefore move through that range within the stages
+    ;; But then the reset should line up with the next one resetting to appear infinite
+
+    ;; (dist-per-dash * dash) becomes it's base x
+    ;; + (dist-per-tick * stage) becomes offset within the tick
+    (define tree-x (+ (* dist-per-tree tree) (- dist-per-tree (* dist-per-tick stage))))
+
+    (cond
+      [(> tree trees)  TRANS_BACKGROUND]
+      [else
+        (place-image
+          TREE 
+          tree-x 175
+          (place-trees (+ tree 1))
+          )
+        ]
+      )
+    )
+
+  (place-trees -1)
+  )
+
+
+(define (render-animation s)
+  (define tick (state-tick s))
+
+  (place-image
+    (render-car tick)
+    300 (+ (state-car_pos s) 500)
+    (place-image
+      (render-trees tick)
+      640 400
+      (place-image
+        (render-road tick)
+        640 600
+        (place-image
+          (render-sky tick)
+          640 110
+          BACKGROUND
+         )
+        )
+      )
+    )
+  )
+
+
+(define (inc-tick s)
+  (state (+ 1 (state-tick s)) (state-car_pos s))
+  )
+
+
+
+(define (handle-key s key)
+  (define curr_tick (state-tick s))
+  (define curr_pos  (state-car_pos s))
+
+  (cond
+    [(string=? key "s")
+      (cond
+        [(< curr_pos 100) (state curr_tick (+ curr_pos 5))]
+        [else s]
+        )
+      ]
+
+    [(string=? key "w")
+      (cond
+        [(> curr_pos -100) (state curr_tick (- curr_pos 5))]
+        [else s]
+        )
+      ]
+
+    [(string=? key "q")   (stop-with s)]
+    [else s]
+    )
+  )
+
+
+(define init-state (state 0 0))
+
+(big-bang init-state
+  (to-draw render-animation)
+  (on-tick inc-tick 0.017)
+  (on-key  handle-key)
+  (close-on-stop #t) ;; lets handle quit work
   )
