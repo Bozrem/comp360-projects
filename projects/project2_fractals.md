@@ -6,7 +6,7 @@
 
 ## Expected Effort
 
-If you aren't able to complete the project, I expect you to spend around 5 hours and as many as 10 hours. If you can't complete the project within 10 hours, you should let yourself stop working. 
+This project is difficult! If you aren't able to complete the project, I expect you to spend at least 7 hours and as many as 10 hours. If you can't complete the project within 10 hours, you should let yourself stop working. 
 
 Your effort now will pay off in the future.
 
@@ -32,7 +32,7 @@ My solutions will become avaiable on Feb 13.
 
 In this project, you'll explore fractals using recursion, higher-order functions, and functional programming in Racket. You'll implement multiple fractal generation techniques.
 
-Fractals are geometric patterns that repeat at every scale. They appear throughout nature (ferns, coastlines, snowflakes) and have deep connections to mathematics and computer science. More importantly for us, they're a perfect playground for recursive thinking!
+Fractals are geometric patterns that repeat at every scale. They appear throughout nature (ferns, coastlines, snowflakes) and have deep connections to mathematics and computer science. More importantly for us, they're great practice for recursive thinking!
 
 ---
 
@@ -43,16 +43,25 @@ Open `project2.rkt`. You'll see:
 ```racket
 #lang racket
 (require 2htdp/image)
+(require lang/posn)
 ```
 
 The `2htdp/image` library provides the graphics primitives you'll need. Key functions you'll use:
 
 - `(add-line img x1 y1 x2 y2 color)` - draw a line on an image
 - `(place-image img x y background)` - place an image on a background
-- `(circle radius mode color)` - create a circle
 - `(rectangle width height mode color)` - create a rectangle
-- `(overlay img1 img2)` - layer images
-- `(scene+polygon img points mode color)` - draw a filled polygon
+
+I'm also providing a helper function that draws polygons using our pair-based points:
+
+```racket
+;; draw-polygon: list of points (pairs), mode ("solid" or "outline"), color -> image
+;; Draws a polygon using a list of (cons x y) points
+(define (draw-polygon image points mode color)
+  (add-polygon image (map (lambda (p) (make-posn (car p) (cdr p))) points)
+               mode
+               color))
+```
 
 ---
 
@@ -153,7 +162,8 @@ The **Sierpinski triangle** is one of the most famous fractals. It's constructed
 - **Base case (depth 0):** Draw a filled triangle
 - **Recursive case:** Draw three smaller Sierpinski triangles at the three corners of the current triangle
 
-![Sierpinski Triangle](https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Sierpinski_triangle.svg/220px-Sierpinski_triangle.svg.png)
+![Sierpinski Triangle](project2_images/sierpinski.png)
+![Warped Sierpinski](project2_images/warped_sierpinski.png)
 
 Write a function `sierpinski-triangle` that takes three corner points and a depth:
 
@@ -163,50 +173,68 @@ Write a function `sierpinski-triangle` that takes three corner points and a dept
 ```
 
 **Strategy:**
-1. Create a blank canvas using `(rectangle width height "solid" "white")`
-2. At depth 0, draw a filled triangle using `scene+polygon`
-3. Otherwise, calculate the midpoints of each edge
-4. Recursively draw three smaller triangles and combine them with `overlay`
+1. Define a background image
+2. Define a recursive helper function which:
+
+   a. Takes in three points, a depth, and an image
+
+   b. If the depth is 0: draw a polygon (see my helper function) on the image
+
+   c. Otherwise: recursively call the helper with the following structure:
+
+   ```racket
+   (helper p1 mp2 mp3 
+          (helper mp1 p2 mp3 
+                  (helper mp1 mp2 3)))
+   ```
+
+   Notice that the `image` argument to the helper is a yet another recursive call, whose own `image` argument is yet a third recursive call.
+
+   `mpx` represents the midpoint. Use the midpoint function from earlier.
+
+3. Call the recursive helper function with the defined background as the `image`.
 
 Test with:
 ```racket
 (sierpinski-triangle (cons 250 50) (cons 50 400) (cons 450 400) 5)
 ```
 
+**Your function MUST be fast!** If it is slow, you will not get full credit! I can run `depth = 10` in a couple of seconds.
+
+**Extra Challenge:** define your background according to the input points so that it is always just the right size!
+
 ### Problem 2.2: Koch Curve
 
 The **Koch curve** replaces each line segment with four segments forming a "bump":
 
-```
-Before:  ___________
-
-After:    __/\__
-```
+![Koch Curve, depth = 0](project2_images/koch_curve_d0.png)
+![Koch Curve, depth = 1](project2_images/koch_curve_d1.png)
+![Koch Curve, depth = 2](project2_images/koch_curve_d2.png)
+![Koch Curve, depth = 4](project2_images/koch_curve.png)
 
 Each new segment is 1/3 the length of the original. The "bump" is an equilateral triangle pointing outward.
 
 Write a function `koch-curve` that takes two endpoints, a depth, and a background image:
 
 ```racket
-(define (koch-curve p1 p2 depth background)
+(define (koch-curve p1 p2 depth image)
   ...)
 ```
 
-**Strategy:**
+**Strategy:** (no recursive helper necessary)
 1. At depth 0, just draw a line from p1 to p2
-2. Otherwise, find four key points:
+2. Otherwise, find four key points (you could use `let` or maybe `let*`?):
    - `a`: 1/3 of the way from p1 to p2 (use `point-at-fraction`)
    - `b`: 2/3 of the way from p1 to p2
-   - `peak`: the apex of the equilateral bump (rotate point `a` around point `a` by 60 degrees... wait, that's not right! Think carefully about what rotation gives you the peak.)
-3. Recursively draw four Koch curves: p1→a, a→peak, peak→b, b→p2
-
-*Challenge:* Getting the peak point right requires careful thinking. The peak is found by rotating point `b` around point `a` by -60 degrees (or `(- (/ pi 3))` radians).
+   - `peak`: the top of the bump (rotate point `b` around point `a` by 60 degrees or `(- (/ pi 3))` radians)
+3. Recursively draw four Koch curves: p1→a, a→peak, peak→b, b→p2. Do this by nesting recursive calls so that the first call's `image` argument is the result of the second call, and so on.
 
 ### Problem 2.3: Koch Snowflake
 
 A **Koch snowflake** is three Koch curves arranged as a triangle:
 
-![Koch Snowflake](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/KochFlake.svg/220px-KochFlake.svg.png)
+![Koch Snowflake, depth = 2](project2_images/koch_snowflake_d2.png)
+![Koch Snowflake, depth = 6](project2_images/koch_snowflake_d6.png)
 
 Write a function `koch-snowflake` that takes a center point, size, and depth:
 
@@ -215,11 +243,11 @@ Write a function `koch-snowflake` that takes a center point, size, and depth:
   ...)
 ```
 
-*Hint:* Calculate the three vertices of an equilateral triangle centered at `center` with the given `size`, then draw three Koch curves.
+*Hint:* Calculate the three vertices of an equilateral triangle centered at `center` with the given `size`, then draw three Koch curves. The first point will be directly above `center` by `size` pixels. The second point can be found by rotating the first point around the center 120 degrees or `(/ (* 2 pi) 3)` radians and the third 240 degrees.
 
 ---
 
-## Part 3: L-Systems (30%)
+## Part 3: L-Systems
 
 **L-Systems** (Lindenmayer systems) generate fractals using string rewriting and turtle graphics. They were originally developed to model plant growth!
 
@@ -252,6 +280,8 @@ Write `apply-rule` that takes a character and a list of rules. Each rule is a pa
 
 *Hint:* Use recursion to search through the rules list.
 
+*Added Challenge:* Use `foldr`.
+
 #### Problem 3.1b: l-system-step
 
 Write `l-system-step` that takes a string and rules, returning the string with all characters replaced according to the rules.
@@ -266,7 +296,10 @@ Write `l-system-step` that takes a string and rules, returning the string with a
 (l-system-step "F+F" (list (cons #\F "F-F") (cons #\+ "-")))  ; => "F-F-F-F"
 ```
 
-*Hint:* Convert string to list with `string->list`, process each character, then combine the results. You can use `string-append` to join strings.
+*Hints:* 
+1. Convert string to list with `string->list`, process each character, then combine the results. You can use `string-append` to join strings.
+
+2. Try using `foldr` here: you want to repeatedly `acc`umulate the result of applying a rule (`apply-rule`) to each `value` of the list of characters. Use `string-append`. Base case: `""`.
 
 #### Problem 3.1c: l-system-generate
 
@@ -287,62 +320,23 @@ Write `l-system-generate` that takes an axiom, rules, and iteration count:
 (l-system-generate "X" (list (cons #\X "XY") (cons #\Y "X")) 3)  ; => "XYXXY"
 ```
 
-### 3.2: Turtle Graphics
+*Hint:* use regular recursion (not `foldr`) with base case `iterations = 0`.
 
-A **turtle** has a position (x, y) and a heading (angle in radians). Represent it as a list: `(list x y angle)`.
+### Turtle Graphics
 
-#### Problem 3.2a: Turtle accessors and constructors
+A **turtle** has a position (x, y) and a heading (angle in radians), represented as a list: `(list x y angle)`.
 
-```racket
-(define (make-turtle x y angle) (list x y angle))
-(define (turtle-x t) (car t))
-(define (turtle-y t) ...)  ; you write this
-(define (turtle-angle t) ...)  ; you write this
-```
+Turtles can:
+* move forward by some distance (creates a new turtle with the new position)
+* change its heading by rotating (creates a new turtle with the new heading)
+* reveal their x- or y-coordinate, their position  (as a pair), or their angle (that is, they have getters)
 
-Test cases for accessors:
+Turtle functions are provided in the starter code.
 
-```racket
-(turtle-x (make-turtle 10 20 0.5))      ; => 10
-(turtle-y (make-turtle 10 20 0.5))      ; => 20
-(turtle-angle (make-turtle 10 20 0.5))  ; => 0.5
-(turtle-x (make-turtle 0 0 0))          ; => 0
-(turtle-y (make-turtle 100 200 pi))     ; => 200
-(turtle-angle (make-turtle 5 5 (/ pi 4))) ; => approximately 0.785
-```
 
-#### Problem 3.2b: turtle-forward
+### 3.2: L-System Interpreter
 
-Write `turtle-forward` that moves the turtle forward by a distance:
-
-```racket
-(turtle-forward (make-turtle 0 0 0) 10)              ; => (list 10 0 0)
-(turtle-forward (make-turtle 0 0 0) 5)               ; => (list 5 0 0)
-(turtle-forward (make-turtle 0 0 (/ pi 2)) 10)       ; => approximately (list 0 10 1.571)
-(turtle-forward (make-turtle 0 0 pi) 10)             ; => approximately (list -10 0 3.14159)
-(turtle-forward (make-turtle 5 5 0) 10)              ; => (list 15 5 0)
-(turtle-forward (make-turtle 0 0 (/ pi 4)) 10)       ; => approximately (list 7.07 7.07 0.785)
-(turtle-forward (make-turtle 100 100 0) 0)           ; => (list 100 100 0)
-```
-
-*Hint:* New x = x + distance * cos(angle), new y = y + distance * sin(angle)
-
-#### Problem 3.2c: turtle-turn
-
-Write `turtle-turn` that adjusts the turtle's heading:
-
-```racket
-(turtle-turn (make-turtle 0 0 0) (/ pi 2))           ; => (list 0 0 1.5707...)
-(turtle-turn (make-turtle 0 0 0) pi)                 ; => (list 0 0 3.14159...)
-(turtle-turn (make-turtle 0 0 (/ pi 2)) (/ pi 2))    ; => (list 0 0 3.14159...)
-(turtle-turn (make-turtle 5 10 0) (/ pi 4))          ; => (list 5 10 0.785...)
-(turtle-turn (make-turtle 0 0 0) (- (/ pi 2)))       ; => (list 0 0 -1.5707...)
-(turtle-turn (make-turtle 0 0 pi) (/ pi 2))          ; => (list 0 0 4.712...)
-```
-
-### 3.3: L-System Interpreter
-
-This is the most challenging function! Write `interpret-lsystem` that draws an L-system string.
+This is the most challenging function! Write `interpret-l-system` that draws an L-system string.
 
 The standard L-system commands are:
 - `F`: move forward and draw a line
@@ -353,12 +347,14 @@ The standard L-system commands are:
 - Any other character: ignore (just continue)
 
 ```racket
-(define (interpret-lsystem str turtle step-size turn-angle stack background)
+(define (interpret-l-system str turtle step-size turn-angle stack background)
   ...)
 ```
 
+Expect a long, complicated cond, each of whose branches are themselves lengthy recursive calls.
+
 **Strategy:**
-1. If the string is empty, return the background
+1. If the string is empty, return the background. Use `string=?` to check string equality.
 2. Get the first character using `(string-ref str 0)`
 3. Get the rest of the string using `(substring str 1)`
 4. Based on the character:
@@ -373,18 +369,43 @@ The standard L-system commands are:
 
 ### 3.4: L-System Examples
 
-Once your interpreter works, create these classic L-system fractals:
+Once your interpreter works, create these classic L-system fractals using this wrapper function:
 
-#### Koch Curve (L-system version)
+```racket
+(define (draw-l-system axiom rules iterations step-size turn-angle x y a)
+  (let ((str (l-system-generate axiom rules iterations)))
+    (interpret-l-system str (make-turtle x y a) step-size turn-angle '() (rectangle 300 300 "solid" "white"))))
+```
+
+#### Square Koch Curve (L-system version)
 - Axiom: `"F"`
 - Rules: `F -> "F+F-F-F+F"`
 - Angle: 90 degrees
+
+```racket
+(define square-koch (draw-l-system
+                     "F"
+                     (list (cons #\F "F-F+F+F-F"))
+                     3
+                     10
+                     (/ pi 2)
+                     20
+                     200
+                     0))
+square-koch
+```
+
+![Square Koch](project2_images/square_koch.png)
+
+You try the others!
 
 #### Sierpinski Triangle (L-system version)
 - Axiom: `"F-G-G"`
 - Rules: `F -> "F-G+F+G-F"`, `G -> "GG"`
 - Angle: 120 degrees
-- (Both F and G mean "draw forward")
+- (Both F and G mean "draw forward", you'll need to check for G in your "forward" case)
+
+![L Sierpinski](project2_images/l-sierpinski.png)
 
 #### Fractal Plant
 - Axiom: `"X"`
@@ -392,126 +413,28 @@ Once your interpreter works, create these classic L-system fractals:
 - Angle: 25 degrees
 - (X is just for structure, only F draws)
 
+![Fractal Plant](project2_images/plant_4iterations.png)
+
 #### Dragon Curve
 - Axiom: `"FX"`
-- Rules: `X -> "X+YF+"`, `Y -> "-FX-Y"`
+- Rules: `X -> "X+YF"`, `Y -> "FX-Y"`
 - Angle: 90 degrees
 
-Write wrapper functions that set up each L-system with appropriate parameters:
-
-```racket
-(define (lsystem-plant iterations)
-  (let* ((axiom "X")
-         (rules (list (cons #\X "F+[[X]-X]-F[-FX]+X")
-                      (cons #\F "FF")))
-         (str (l-system-generate axiom rules iterations))
-         ...)
-    (interpret-lsystem str ...)))
-```
+![Fractal Plant](project2_images/dragon_curve_8iterations.png)
 
 ---
 
-## Part 4: The Chaos Game & IFS (20%)
+## Part 5: Your Fractal Creation
 
-The **chaos game** is a surprisingly simple algorithm that produces complex fractals:
-
-1. Start with a point
-2. Randomly choose one of several "attractor" points
-3. Move halfway toward the chosen attractor
-4. Plot the point
-5. Repeat thousands of times
-
-### Problem 4.1: plot-point
-
-Write a function that plots a single point on a background:
-
-```racket
-(define (plot-point pt color background)
-  ...)
-```
-
-*Hint:* Use `place-image` with a very small circle (radius 1).
-
-### Problem 4.2: chaos-game-step
-
-Write a function that performs one step of the chaos game:
-
-```racket
-(define (chaos-game-step current-point attractors)
-  ...)
-```
-
-*Hint:* Use `(list-ref attractors (random (length attractors)))` to pick a random attractor, then use your `midpoint` function.
-
-### Problem 4.3: chaos-game
-
-Write the main chaos game function:
-
-```racket
-(define (chaos-game attractors iterations start-point)
-  ...)
-```
-
-Use an internal helper function with an accumulator for the image. Each iteration should update the point, plot it, and recurse.
-
-### Problem 4.4: Sierpinski via Chaos Game
-
-Using three points as attractors (forming a triangle), the chaos game produces... the Sierpinski triangle!
-
-```racket
-(define (chaos-sierpinski iterations)
-  (let ((attractors (list (cons 250 50)
-                          (cons 50 450)
-                          (cons 450 450))))
-    (chaos-game attractors iterations (cons 250 250))))
-```
-
-Try it with 10,000+ iterations.
-
-### Problem 4.5: Barnsley Fern (Challenge)
-
-The **Barnsley fern** is a famous IFS fractal that looks remarkably like a real fern. Instead of moving "halfway to an attractor," it uses **affine transformations**:
-
-```
-x' = ax + by + e
-y' = cx + dy + f
-```
-
-Each transformation has a probability of being chosen. The fern uses four transformations:
-
-| Name | a | b | c | d | e | f | probability |
-|------|---|---|---|---|---|---|-------------|
-| Stem | 0 | 0 | 0 | 0.16 | 0 | 0 | 1% |
-| Left leaflet | 0.2 | -0.26 | 0.23 | 0.22 | 0 | 1.6 | 7% |
-| Right leaflet | -0.15 | 0.28 | 0.26 | 0.24 | 0 | 0.44 | 7% |
-| Main | 0.85 | 0.04 | -0.04 | 0.85 | 0 | 1.6 | 85% |
-
-Implement the Barnsley fern:
-
-1. Write `apply-transform` that applies an affine transformation to a point
-2. Write `choose-transform` that picks a transform based on probabilities
-3. Write `ifs-fractal` similar to `chaos-game` but using transforms
-4. The fern's coordinates range from about -2.2 to 2.7 in x and 0 to 10 in y. Scale and translate to fit your canvas.
-
----
-
-## Part 5: Your Fractal Creation (10%)
-
-Create your own fractal exploration! Some ideas:
+Create your own fractal! Some ideas:
 
 - **Design a new L-system:** Look up "L-system examples" for inspiration. Dragon curves, Hilbert curves, and various plant shapes are all possible.
-- **Colored chaos game:** Color each point based on which attractor was chosen.
-- **IFS experiments:** Design your own affine transformations to create new shapes.
 - **Fractal combinations:** Layer multiple fractals or create a "fractal forest."
-- **Animation:** Create a series of images at different depths/iterations.
-- **3D projections:** Project 3D fractal coordinates onto 2D.
+- **Animation:** Create a series of images at different depths/iterations. Look up "animation in racket". Can you iteratively draw one of the L-system fractals as it changes?
+- **Learn iterated function systems (IFS) on your own!**
+- Or something else!
 
-Your creation should demonstrate:
-- Understanding of at least **two** fractal generation techniques from this project
-- Effective use of helper functions and internal defines
-- Creative use of `let`/`let*` for intermediate values
-- Meaningful use of recursion
-- At least one lambda expression
+Make something you'd be proud to show off and that you're able to explain!
 
 ---
 
@@ -531,45 +454,8 @@ Your creation should demonstrate:
 
 ---
 
-## Function Summary
-
-By the end of this project, you should have implemented:
-
-**Part 1:**
-- `midpoint`
-- `point-at-fraction`
-- `rotate-point`
-- `draw-line`
-
-**Part 2:**
-- `sierpinski-triangle`
-- `koch-curve`
-- `koch-snowflake`
-
-**Part 3:**
-- `apply-rule`
-- `l-system-step`
-- `l-system-generate`
-- Turtle functions (`make-turtle`, `turtle-x`, `turtle-y`, `turtle-angle`, `turtle-forward`, `turtle-turn`)
-- `interpret-lsystem`
-- At least two L-system wrapper functions
-
-**Part 4:**
-- `plot-point`
-- `chaos-game-step`
-- `chaos-game`
-- `chaos-sierpinski`
-- (Optional) Barnsley fern functions
-
-**Part 5:**
-- Your creative fractal
-
----
-
 ## Resources
 
 - [2htdp/image documentation](https://docs.racket-lang.org/teachpack/2htdpimage.html)
 - [L-system Wikipedia](https://en.wikipedia.org/wiki/L-system) - great examples and images
-- [Chaos game Wikipedia](https://en.wikipedia.org/wiki/Chaos_game)
-- [Barnsley fern Wikipedia](https://en.wikipedia.org/wiki/Barnsley_fern)
 - [Fractal curves](https://en.wikipedia.org/wiki/Fractal_curve) - Koch, Sierpinski, and more
