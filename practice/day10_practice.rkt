@@ -1,4 +1,6 @@
 #lang racket
+
+(provide (all-defined-out))
 ;;; COMP 360 - Day 10 Practice Problems
 ;;; Lexical Scope, Closures, and Environment Diagrams
 
