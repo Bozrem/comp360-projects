@@ -228,16 +228,88 @@
   (let ((str (l-system-generate axiom rules iterations)))
     (interpret-l-system str (make-turtle x y a) step-size turn-angle '() (rectangle 300 300 "solid" "white"))))
 
-; L-system Examples
-
-; Sierpinski
 
 
-; Plant
 
 
-; Dragon
 
 
-;;; Part 5: Come up with your own fractal!
+; Gemini Chat for Fractal Research:
+; https://gemini.google.com/share/da6f0748d76b
 
+(define (make-julia str width height)
+  (define (str->c s)
+    (define (str->theta st)
+      (define (str->sum strng total)
+        (cond
+          [(equal? strng "") total]
+          [else (str->sum (substring strng 1) (+ (* total 31) (char->integer (string-ref strng 0))))]
+          )
+        )
+
+      (* (* 2 pi) (/ (modulo (str->sum st 1) 10000) 10000))
+      )
+
+    (define (theta->c theta)
+      (-
+        (/ (exp (* 0+1i theta)) 2)
+        (/ (exp (* 0+2i theta)) 4)
+        )
+      )
+
+    (theta->c (str->theta s))
+    )
+
+
+  (define c (str->c str))
+
+  (define (point->color x y)
+    (define CUTOFF 300)
+    ;; X and Y have to be between -1.5 and 1.5. IDK why
+    (define norm-x (- (* (/ x width) 3.0) 1.5))
+    (define norm-y (- (* (/ y height) 3.0) 1.5))
+
+    (define (z->n z it)
+      (cond
+        [(> it CUTOFF) it]
+        [(> (+ (expt (real-part z) 2) (expt (imag-part z) 2)) 4)  it]
+        [else   (z->n (+ (expt z 2) c) (+ 1 it))] ;; Tail recurse
+        )
+      )
+
+    (define (n->color n)
+      (define RED-SPEED   5)
+      (define GREEN-SPEED 7)
+      (define BLUE-SPEED  11)
+      (define (calc s) (modulo (* n s) 255)) ;; Mushrooms
+      ;(define (calc s) (exact-floor (* 255 (/ n CUTOFF)))) ;; Monochrome
+
+      (cond
+        [(= n CUTOFF) (color 0 0 0)]
+        [else         (color (calc RED-SPEED) (calc GREEN-SPEED) (calc BLUE-SPEED))]
+        )
+      )
+
+    (n->color (z->n (make-rectangular norm-x norm-y) 0))
+    )
+
+
+  ;; NOTE: This is the only part that is directly AI generated for performance
+  (define pixel-list
+    (for*/list ([y height] [x width])
+      (point->color x y)))
+  ;; NOTE: See the gemini chat if you want to see what I said
+
+  (color-list->bitmap pixel-list width height)
+  )
+
+
+(define (show-julia str)
+  (show (make-julia str 1600 1200))
+  )
+
+(define (julia-scl str scl)
+  (define WIDTH (* 320 scl))
+  (define HEIGHT (* 240 scl))
+  (show (make-julia str WIDTH HEIGHT))
+  )
