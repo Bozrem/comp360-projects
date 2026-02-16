@@ -69,6 +69,58 @@
                 (cons 0.5 -0.866) 0.001 "Negative 60 deg rotation"))
 
 
+(define rules1 (list (cons #\F "F+F-F")))
+(define rules2 (list (cons #\F "FF") (cons #\X "F+X")))
+(define rules3 '())
+
+(define-test-suite apply-rule-suite
+  (test-case "Rules Set 1: Simple expansion"
+    (check-equal? (apply-rule #\F rules1) "F+F-F" "Rule exists for F")
+    (check-equal? (apply-rule #\+ rules1) "+" "Default: + stays +")
+    (check-equal? (apply-rule #\- rules1) "-" "Default: - stays -")
+    (check-equal? (apply-rule #\X rules1) "X" "Default: X stays X"))
+
+  (test-case "Rules Set 2: Multiple rules"
+    (check-equal? (apply-rule #\F rules2) "FF" "Rule F -> FF")
+    (check-equal? (apply-rule #\X rules2) "F+X" "Rule X -> F+X")
+    (check-equal? (apply-rule #\+ rules2) "+" "No rule for +"))
+
+  (test-case "Rules Set 3: Empty rules"
+    (check-equal? (apply-rule #\F rules3) "F" "Empty rules returns symbol as string")))
+
+(define-test-suite l-system-step-suite
+  (check-equal? (l-system-step "F" (list (cons #\F "FF"))) "FF" "Single char expansion")
+  (check-equal? (l-system-step "F+F" (list (cons #\F "FF"))) "FF+FF" "Expand multiple symbols")
+  (check-equal? (l-system-step "F-F-F" (list (cons #\F "FF"))) "FF-FF-FF" "Expand with separators")
+  (check-equal? (l-system-step "+" (list (cons #\F "FF"))) "+" "No expansion needed")
+  (check-equal? (l-system-step "" (list (cons #\F "FF"))) "" "Empty string returns empty")
+  (check-equal? (l-system-step "FX" (list (cons #\F "FF") (cons #\X "FXF"))) "FFFXF" "Multiple distinct rules")
+  (check-equal? (l-system-step "F+F" (list (cons #\F "F-F") (cons #\+ "-"))) "F-F-F-F" "Symbol transformation"))
+
+(define-test-suite l-system-generate-suite
+  (test-case "Koch-like expansion (F -> F+F)"
+    (let ([koch-rules (list (cons #\F "F+F"))])
+      (check-equal? (l-system-generate "F" koch-rules 0) "F" "Depth 0")
+      (check-equal? (l-system-generate "F" koch-rules 1) "F+F" "Depth 1")
+      (check-equal? (l-system-generate "F" koch-rules 2) "F+F+F+F" "Depth 2")
+      (check-equal? (l-system-generate "F" koch-rules 3) "F+F+F+F+F+F+F+F" "Depth 3")))
+
+  (test-case "Exponential expansion (F -> FF)"
+    (let ([exp-rules (list (cons #\F "FF"))])
+      (check-equal? (l-system-generate "F" exp-rules 0) "F" "Depth 0")
+      (check-equal? (l-system-generate "F" exp-rules 1) "FF" "Depth 1")
+      (check-equal? (l-system-generate "F" exp-rules 2) "FFFF" "Depth 2")
+      (check-equal? (l-system-generate "F" exp-rules 3) "FFFFFFFF" "Depth 3")))
+
+  (test-case "Complex expansion (X -> XY, Y -> X)"
+    (let ([complex-rules (list (cons #\X "XY") (cons #\Y "X"))])
+      (check-equal? (l-system-generate "X" complex-rules 0) "X" "Depth 0")
+      (check-equal? (l-system-generate "X" complex-rules 1) "XY" "Depth 1")
+      (check-equal? (l-system-generate "X" complex-rules 2) "XYX" "Depth 2")
+      (check-equal? (l-system-generate "X" complex-rules 3) "XYXXY" "Depth 3"))))
+
+
+
 ;; Custom check for visual verification
 ;; NOTE: This is AI Generated, see gemini chat at top of file
 (define (check-visual image description)
@@ -107,8 +159,88 @@
      (draw-line (cons 10 10) (cons 90 90) "green" (rectangle 100 100 "solid" "gray"))
      "Green diagonal line on a gray background")))
 
+(define-test-suite recursive-fractal-suite
+  
+  ;; --- Sierpinski Triangle Tests ---
+  (test-case "Sierpinski Depth 0"
+    (check-visual (sierpinski-triangle 200 0) 
+                  "Sierpinski Depth 0: A single solid green triangle"))
 
+  (test-case "Sierpinski Depth 1"
+    (check-visual (sierpinski-triangle 200 1) 
+                  "Sierpinski Depth 1: Three green triangles forming a larger triangle with a hole"))
 
+  (test-case "Sierpinski Depth 4"
+    (check-visual (sierpinski-triangle 400 4) 
+                  "Sierpinski Depth 4: Complex recursive triangle pattern"))
+
+  ;; --- Koch Curve Tests ---
+  (test-case "Koch Curve Depth 0"
+    (check-visual (koch-curve 200 0) 
+                  "Koch Curve Depth 0: A single black line"))
+
+  (test-case "Koch Curve Depth 1"
+    (check-visual (koch-curve 200 1) 
+                  "Koch Curve Depth 1: A line with a triangular 'bump' in the middle"))
+
+  (test-case "Koch Curve Depth 3"
+    (check-visual (koch-curve 300 3) 
+                  "Koch Curve Depth 3: Detailed fractal edge (coastline look)"))
+
+  ;; --- Koch Snowflake Tests ---
+  (test-case "Koch Snowflake Depth 3"
+    (check-visual (koch-snowflake 300 3) 
+                  "Koch Snowflake Depth 3: A six-pointed star/snowflake shape with fractal edges")))
+
+(define-test-suite l-system-examples-suite
+  
+  (test-case "Square Koch (L-System)"
+    (check-visual 
+     (draw-l-system 
+      "F" 
+      (list (cons #\F "F-F+F+F-F")) 
+      3 
+      10 
+      (/ pi 2) 
+      20 200 0)
+     "Square Koch: Boxy, geometric fractal curve (90 degree turns)"))
+
+  (test-case "Sierpinski Triangle (L-System)"
+    ;; Rules: F-> F-G+F+G-F, G-> GG
+    (check-visual 
+     (draw-l-system 
+      "F-G-G" 
+      (list (cons #\F "F-G+F+G-F") (cons #\G "GG")) 
+      3
+      10 
+      (/ (* 2 pi) 3) ; 120 degrees
+      20 200 0)
+     "L-System Sierpinski: Should look identical to the recursive triangle"))
+
+  (test-case "Fractal Plant"
+    ;; Rules: X-> F+[[X]-X]-F[-FX]+X, F-> FF
+    (check-visual 
+     (draw-l-system 
+      "X" 
+      (list (cons #\X "F+[[X]-X]-F[-FX]+X") (cons #\F "FF")) 
+      4 
+      5 
+      (* 25 (/ pi 180)) ; 25 degrees converted to radians
+      150 200 (/ pi 2)) ; Start pointing up
+     "Fractal Plant: Organic looking weed/bush structure"))
+
+  (test-case "Dragon Curve"
+    ;; Rules: X-> X+YF, Y-> FX-Y
+    (check-visual 
+     (draw-l-system 
+      "FX" 
+      (list (cons #\X "X+YF") (cons #\Y "FX-Y")) 
+      8 
+      5 
+      (/ pi 2) ; 90 degrees
+      150 150 0)
+     "Dragon Curve: Complex, dense rectangular spiral pattern"))
+)
 
 
 
@@ -118,7 +250,12 @@
   midpoint-suite
   point-at-fraction-suite
   rotate-point-suite
-  ;; line-drawing-suite
+  apply-rule-suite
+  l-system-step-suite
+  l-system-generate-suite
+  line-drawing-suite
+  recursive-fractal-suite
+  l-system-examples-suite
   )
 
 (run-tests
