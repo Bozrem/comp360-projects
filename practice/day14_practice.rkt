@@ -20,8 +20,8 @@
     [else (count-evens (cdr lst))]))
 
 ;;; Is count-evens tail-recursive?
-;;; Answer:
-;;; Explanation:
+;;; Answer: No
+;;; Explanation: In the middle case, it applies the +1 to the answer of the one below
 
 
 ;;; Function B:
@@ -31,8 +31,8 @@
       (last-element (cdr lst))))
 
 ;;; Is last-element tail-recursive?
-;;; Answer:
-;;; Explanation:
+;;; Answer: Yes
+;;; Explanation: Nothing is being done to the RESULTS of the lower calls
 
 
 ;;; Function C:
@@ -44,8 +44,8 @@
     [else (cons (car lst) (flatten-list (cdr lst)))]))
 
 ;;; Is flatten-list tail-recursive?
-;;; Answer:
-;;; Explanation:
+;;; Answer: No
+;;; Explanation: It applies append to results, and it splits tree-like, and cons in the else
 
 
 ;;; ============================================================
@@ -70,12 +70,20 @@
 ;;; Hint: What should the initial accumulator be?
 
 (define (product lst)
-  'todo)
+  (define (p-tr l pro)
+    (cond
+      [(empty? l) pro]
+      [else  (p-tr (cdr l) (* pro (car l)))]
+      )
+    )
+  
+  (p-tr lst 1)
+  )
 
 ;;; Test cases (uncomment to test):
-; (product '())           ; => 1
-; (product '(2 3 4))      ; => 24
-; (product '(1 2 3 4 5))  ; => 120
+(product '())           ; => 1
+(product '(2 3 4))      ; => 24
+(product '(1 2 3 4 5))  ; => 120
 
 
 ;;; 2b: Convert this function to be tail-recursive.
@@ -91,12 +99,21 @@
 ;;;       (Think about what a good starting value is.)
 
 (define (max-tr lst)
-  'todo)
+  (define (max-tr-rec l m)
+    (cond
+      [(empty? l)     m]
+      [(> (car l) m)  (max-tr-rec (cdr l) (car l))]
+      [else           (max-tr-rec (cdr l) m)]
+      )
+    )
+
+  (max-tr-rec lst (car lst))
+  )
 
 ;;; Test cases (uncomment to test):
-; (max-tr '(3))           ; => 3
-; (max-tr '(1 5 2 8 3))   ; => 8
-; (max-tr '(-1 -5 -2))    ; => -1
+(max-tr '(3))           ; => 3
+(max-tr '(1 5 2 8 3))   ; => 8
+(max-tr '(-1 -5 -2))    ; => -1
 
 
 ;;; 2c: Convert this function to be tail-recursive.
@@ -111,12 +128,20 @@
 ;;; Hint: The accumulator is a string that you build up.
 
 (define (repeat-char ch n)
-  'todo)
+  (define (rc-rec n acc)
+    (cond
+      [(zero? n)  acc]
+      [else       (rc-rec (- n 1) (string-append (string ch) acc))]
+      )
+    )
+
+  (rc-rec n "")
+  )
 
 ;;; Test cases (uncomment to test):
-; (repeat-char #\* 0)   ; => ""
-; (repeat-char #\* 5)   ; => "*****"
-; (repeat-char #\a 3)   ; => "aaa"
+(repeat-char #\* 0)   ; => ""
+(repeat-char #\* 5)   ; => "*****"
+(repeat-char #\a 3)   ; => "aaa"
 
 
 ;;; ============================================================
