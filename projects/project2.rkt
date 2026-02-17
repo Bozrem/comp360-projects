@@ -229,9 +229,66 @@
     (interpret-l-system str (make-turtle x y a) step-size turn-angle '() (rectangle 300 300 "solid" "white"))))
 
 
+;; NOTE: AI Generated color section
+;; --- 1. Your Originals ---
+(define (color-mushrooms n max)
+  (if (= n max)
+      (color 0 0 0)
+      (color (modulo (* n 5) 255) 
+             (modulo (* n 7) 255) 
+             (modulo (* n 11) 255))))
 
+(define (color-monochrome n max)
+  (if (= n max)
+      (color 0 0 0)
+      (let ([v (exact-floor (* 255 (/ n max)))])
+        (color v v v))))
 
+;; --- 2. Smooth Trigonometry (Neon) ---
+(define (color-neon-trig n max)
+  (if (= n max)
+      (color 0 0 0)
+      (let* ([freq 0.1]
+             [calc (lambda (phase) 
+                     (exact-floor (+ 127.5 (* 127.5 (sin (+ (* freq n) phase))))))])
+        (color (calc 0.0)    ; Red phase
+               (calc 2.09)   ; Green phase (+ 2pi/3)
+               (calc 4.18))))) ; Blue phase (+ 4pi/3)
 
+;; --- 3. Polynomial (Fire Palette) ---
+(define (color-fire n max)
+  (if (= n max)
+      (color 0 0 0)
+      (let* ([t (/ (modulo n 50) 50.0)] ;; Cycle every 50 iterations
+             [r (exact-floor (* 255 (sqrt t)))]
+             [g (exact-floor (* 255 (expt t 3)))]
+             [b (if (> t 0.8) (exact-floor (* (- t 0.8) 5 255)) 0)])
+        (color r g b))))
+
+;; --- 4. Logarithmic (Ocean Structure) ---
+;; --- 4. Logarithmic (Ocean Structure) [FIXED] ---
+(define (color-ocean-log n max-iter)
+  (cond
+    [(= n max-iter) (color 0 0 0)]
+    ;; Handle n=0 case to prevent log errors
+    [(<= n 0) (color 255 255 255)] 
+    [else
+     ;; Use floating point division to avoid exactness errors with logs
+     (define val 
+       (exact-floor 
+        (- 255 (* 255 (/ (log n) (log max-iter))))))
+     
+     ;; Ensure val stays within 0-255 bounds just in case
+     (define safe-val (max 0 (min 255 val)))
+     
+     (color safe-val safe-val (min 255 (+ safe-val 40)))]))
+;; ==========================================
+;; [CONFIGURATION] CHANGE THIS TO SWITCH MODES
+;; Options: 
+;;   color-mushrooms, color-monochrome, 
+;;   color-neon-trig, color-fire, color-ocean-log
+;; ==========================================
+(define ACTIVE-MODE color-monochrome)
 
 
 ; Gemini Chat for Fractal Research:
@@ -290,7 +347,7 @@
         )
       )
 
-    (n->color (z->n (make-rectangular norm-x norm-y) 0))
+    (ACTIVE-MODE (z->n (make-rectangular norm-x norm-y) 0) CUTOFF)
     )
 
 
