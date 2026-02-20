@@ -100,7 +100,21 @@
 
 
 ; make-friction
-; tests
+(define (make-friction coeff)
+  (lambda (pos vel) (forceDir (* (velocity-dxdt vel) coeff -1) (* (velocity-dydt vel) coeff -1)))
+  )
+
+;; Gemini defined the math I used in this one
+(define (make-air-resistance coeff)
+  (lambda (pos vel)
+    (define vx (velocity-dxdt vel))
+    (define vy (velocity-dydt vel))
+
+    (define speed (sqrt (+ (* vx vx) (* vy vy)))) ;; Speed = sqrt(vx^2 + vy^2)
+
+    (forceDir (* -1 coeff speed vx) (* -1 coeff speed vy))
+    )
+  )
 
 
 ; make-attractor

@@ -41,6 +41,30 @@
     (check-equal? (forceDir-d2xdt2 force) 2.5 "Wind should apply to X")
     (check-equal? (forceDir-d2ydt2 force) -1.0 "Wind should apply to Y")))
 
+  (test-case "make-friction"
+    ;; Testing with a negative coefficient to simulate opposition to movement
+    (define friction (make-friction 0.5)) 
+    (define dummy-pos (position 0 0))
+    (define dummy-vel (velocity 10 -4))
+    (define force (friction dummy-pos dummy-vel))
+
+    (check-equal? (forceDir-d2xdt2 force) -5.0 "Friction X should be vel-x * coeff")
+    (check-equal? (forceDir-d2ydt2 force) 2.0  "Friction Y should be vel-y * coeff"))
+
+  (test-case "make-air-resistance"
+    (define air-res (make-air-resistance 0.1))
+    (define dummy-pos (position 0 0))
+
+    ;; A 3-4-5 right triangle yields a clean integer speed of 5
+    (define dummy-vel (velocity 3 4)) 
+    (define force (air-res dummy-pos dummy-vel))
+
+    ;; F_x = -1 * 0.1 * 5 * 3 = -1.5
+    ;; F_y = -1 * 0.1 * 5 * 4 = -2.0
+    (check-equal? (forceDir-d2xdt2 force) -1.5 "Air resistance X calculation")
+    (check-equal? (forceDir-d2ydt2 force) -2.0 "Air resistance Y calculation"))
+
+
 ;; Suite 3: Particle Lifecycle
 (define-test-suite lifecycle-suite
   (test-case "alive? respects lifetime and dt updates"
