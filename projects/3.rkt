@@ -1,8 +1,14 @@
 #lang racket
 
+(provide (all-defined-out))
+
 (require racket/class)
 (require 2htdp/image)
 (require 2htdp/universe)
+
+(struct position (x y) #:mutable)
+(struct velocity (dxdt dydt) #:mutable)
+(struct forceDir (d2xdt2 d2ydt2))
 
 ;;; 1: Particle Basics
 (define particle%
@@ -11,26 +17,46 @@
 
     (define SIZE 5)
 
-    (init-field x)
-    (init-field y)
-    (init-field dxdt)
-    (init-field dydt)
-    (init-field lifetime) ;; Public and mutable
-    (define age 0.0) ;; Private and mutable
+    (init-field p) ;; Public and mutable
+    (init-field v)
+    (init-field force-funcs) ;; TODO: Contract to show this is a list of procedures that take in position and velocity
+    (init-field lifetime)
+    (define t 0.0) ;; Private and mutable
+
 
     (define/public (update! dt)
-      (set! x (+ x (* dxdt dt)))
-      (set! y (+ y (* dydt dt)))
-      (set! age (+ age dt))
+      (define (compute-forces f)
+        (cond
+          [(empty? f) empty]
+          [else       (cons ((first f) p v) (compute-forces (rest f)))]
+        )
+      ) ;; This generates a list of the current forces
+
+      (define (update-velocity! force-values)
+        (define (apply-force f)
+          (set-velocity-dxdt! v (+ (velocity-dxdt v) (* (forceDir-d2xdt2 f) dt)))
+          (set-velocity-dydt! v (+ (velocity-dydt v) (* (forceDir-d2ydt2 f) dt)))
+        )
+        (for-each apply-force force-values)
+      ) ;; Updates the velocity based on the current forces
+
+      (define (update-position!)
+        (set-position-x! p (+ (position-x p) (* (velocity-dxdt v) dt)))
+        (set-position-y! p (+ (position-y p) (* (velocity-dydt v) dt)))
+      )
+
+      (update-velocity! (compute-forces force-funcs))
+      (update-position!)
+      (set! t (+ t dt))
     )
 
 
     (define/public (alive?)
-      (< age lifetime))
+      (< t lifetime))
 
 
     (define/private (draw)
-      (define perc-age  (/ age lifetime))
+      (define perc-age  (/ t lifetime))
       (define alpha     (max 0 (* (- 1 perc-age) 255))) ;; To avoid negative alphas
       (define c         (color 0 0 0 (exact-floor alpha)))
 
@@ -40,7 +66,7 @@
 
     (define/public (draw-on background)
       (define img (draw))
-      (place-image/align img x y "center" "center" background)
+      (place-image/align img (position-x p) (position-y p) "center" "center" background)
     )
   )
 )
@@ -49,22 +75,31 @@
 ; 2: Closures
 
 ; make-spawner
+(define (make-spawner x y d-min d-max life)
+  (define (rand-d) (+ d-min (random (- d-max d-min))))
 
-; tests
+  (lambda ()
+    (new particle%
+         [p (position x y)]
+         [v (velocity (rand-d) (rand-d))]
+         [force-funcs empty]
+         [lifetime life]
+    )
+  )
+)
 
 
-; make-gravity
+(define (make-gravity val)
+  (lambda (pos vel) (forceDir 0 val))
+  )
 
-; tests
 
-
-; make-wind
-
-; tests
+(define (make-wind d2xdt2 d2ydt2)
+  (lambda (pos vel) (forceDir d2xdt2 d2ydt2))
+  )
 
 
 ; make-friction
-
 ; tests
 
 
