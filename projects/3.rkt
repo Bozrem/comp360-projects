@@ -24,6 +24,11 @@
     (define t 0.0) ;; Private and mutable
 
 
+    (define/public (add-force force-func)
+      (set! force-funcs (cons force-func force-funcs))
+    )
+
+
     (define/public (update! dt)
       (define (compute-forces f)
         (cond
@@ -143,23 +148,39 @@
 ; 3: Tail Recursion
 
 ; update-all-particles
-
-; tests
+(define (update-all-particles particles dt)
+  (for-each (lambda (p) (send p update! dt)) particles)
+  )
 
 
 ; apply-force-to-all
-
-; tests
+(define (apply-force-to-all force-func particles)
+  (for-each (lambda (p) (send p add-force force-func)) particles)
+  )
 
 
 ; filter-alive
+(define (filter-alive particles)
+  (define (internal unchecked verified)
+    (cond
+      [(empty? unchecked)             verified]
+      [(send (car unchecked) alive?)  (internal (cdr unchecked) (cons (car unchecked) verified))]
+      [else                           (internal (cdr unchecked) verified)] ;; Not alive, don't add
+      )
+    )
 
-; tests
+  (internal particles empty) ;; Technically this also reverses the list, but I don't think that's a problem
+  )
 
 
 ; draw-all-particles
+(define (draw-all-particles particles background)
+  (cond
+    [(empty? particles) background]
+    [else               (draw-all-particles (cdr particles) (send (car particles) draw-on background))]
+    )
+  )
 
-; tests
 
 
 ; 4: Simulation!
@@ -184,7 +205,7 @@
 ;(require racket/random)
 ;(define WIDTH 800)
 ;(define HEIGHT 800)
-;
+
 ;(define (make-random-spawner x y v-min v-max life images)
 ;  (lambda () (make-particle x y (random v-min v-max) (random v-min v-max) life (car (random-sample images 1)))))
 ;
