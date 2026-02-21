@@ -9,6 +9,30 @@
 (require 2htdp/image)
 (require "3.rkt")
 
+
+; visual-check
+
+(define (visual-check description img)
+  (displayln "\n--- VISUAL TEST ---")
+  (displayln description)
+  (displayln "Opening window... Press ANY KEY in the graphic window to close it, then return here.")
+
+  (big-bang img
+    [to-draw (lambda (state) state)]
+    [on-key (lambda (state key) (stop-with state))]
+    [name "Visual Test"])
+
+  (display "Does the image match the description? (y/n): ")
+  (flush-output)
+
+  (define response (string-trim (read-line)))
+  (cond
+    [(string-ci=? response "y") #t]
+    [(string-ci=? response "n") #f]
+    [else (displayln "Invalid input. Failing test by default.")
+     #f]))
+
+
 ;; Suite 1: Mutable Struct Tests
 (define-test-suite struct-suite
   (test-case "Position mutability"
@@ -100,18 +124,17 @@
     (define p (new particle% 
                    [p (position 0 0)] 
                    [v (velocity 0 0)] 
-                   [force-funcs empty] 
                    [lifetime 2.0]))
     
     (check-true (send p alive?) "Particle starts alive")
     
-    (send p update! 1.0)
+    (send p update! 1.0 empty)
     (check-true (send p alive?) "Particle alive at t=1.0")
     
-    (send p update! 1.0)
+    (send p update! 1.0 empty)
     (check-false (send p alive?) "Particle dead at t=2.0 (t < lifetime is false)")
     
-    (send p update! 0.5)
+    (send p update! 0.5 empty)
     (check-false (send p alive?) "Particle remains dead after lifetime exceeded")))
 
 ;; Suite 4: Particle Physics and Integration
@@ -120,9 +143,8 @@
     (define p (new particle% 
                    [p (position 0 0)] 
                    [v (velocity 10 -5)] 
-                   [force-funcs empty] 
                    [lifetime 5.0]))
-    (send p update! 1.0)
+    (send p update! 1.0 empty)
     
     (define current-pos (get-field p p))
     (define current-vel (get-field v p))
@@ -137,103 +159,43 @@
     (define p (new particle% 
                    [p (position 0 0)] 
                    [v (velocity 0 0)] 
-                   [force-funcs (list gravity)] 
                    [lifetime 5.0]))
     
     ;; Step 1: dt = 1.0. 
-    ;; Velocity updates first: vy = 0 + 10(1) = 10. 
-    ;; Position updates second: y = 0 + 10(1) = 10.
-    (send p update! 1.0)
+    (send p update! 1.0 (list gravity))
     (check-equal? (velocity-dydt (get-field v p)) 10.0)
     (check-equal? (position-y (get-field p p)) 10.0)
     
     ;; Step 2: dt = 1.0. 
-    ;; Velocity: vy = 10 + 10(1) = 20. 
-    ;; Position: y = 10 + 20(1) = 30.
-    (send p update! 1.0)
+    (send p update! 1.0 (list gravity))
     (check-equal? (velocity-dydt (get-field v p)) 20.0)
     (check-equal? (position-y (get-field p p)) 30.0)))
 
 ;; Suite 5: System Management Tests
 (define-test-suite system-suite
-  (test-case "update-all-particles applies dt to all"
-    (define p1 (new particle% [p (position 0 0)] [v (velocity 10 0)] [force-funcs empty] [lifetime 5]))
-    (define p2 (new particle% [p (position 0 0)] [v (velocity 0 10)] [force-funcs empty] [lifetime 5]))
-    (define particles (list p1 p2))
-    
-    (update-all-particles particles 1.0)
-    
-    (check-equal? (position-x (get-field p p1)) 10.0 "Particle 1 X updated")
-    (check-equal? (position-y (get-field p p2)) 10.0 "Particle 2 Y updated"))
-
-  (test-case "apply-force-to-all adds force to all"
-    (define p1 (new particle% [p (position 0 0)] [v (velocity 0 0)] [force-funcs empty] [lifetime 5]))
-    (define p2 (new particle% [p (position 0 0)] [v (velocity 0 0)] [force-funcs empty] [lifetime 5]))
-    (define particles (list p1 p2))
-    (define gravity (make-gravity 9.8))
-    
-    (apply-force-to-all gravity particles)
-    
-    (check-equal? (length (get-field force-funcs p1)) 1 "Particle 1 received force")
-    (check-equal? (length (get-field force-funcs p2)) 1 "Particle 2 received force"))
-
   (test-case "filter-alive removes dead particles"
     ;; p1 has lifetime 1.0, p2 has lifetime 5.0
-    (define p1 (new particle% [p (position 0 0)] [v (velocity 0 0)] [force-funcs empty] [lifetime 1.0]))
-    (define p2 (new particle% [p (position 0 0)] [v (velocity 0 0)] [force-funcs empty] [lifetime 5.0]))
+    (define p1 (new particle% [p (position 0 0)] [v (velocity 0 0)] [lifetime 1.0]))
+    (define p2 (new particle% [p (position 0 0)] [v (velocity 0 0)] [lifetime 5.0]))
     (define particles (list p1 p2))
     
     ;; Advance time by 2.0 to kill p1
-    (update-all-particles particles 2.0) 
+    (send p1 update! 2.0 empty)
+    (send p2 update! 2.0 empty)
     
     (define living-particles (filter-alive particles))
     
     (check-equal? (length living-particles) 1 "Only one particle should remain")
     (check-true (send (first living-particles) alive?) "Remaining particle is alive")))
 
-
-
-;; Run all suites
-(run-tests struct-suite)
-(run-tests forces-suite)
-(run-tests lifecycle-suite)
-(run-tests physics-suite)
-(run-tests system-suite)
-
-
-
-; visual-check
-(define (visual-check description img)
-  (displayln "\n--- VISUAL TEST ---")
-  (displayln description)
-  (displayln "Opening window... Press ANY KEY in the graphic window to close it, then return here.")
-  
-  (big-bang img
-    [to-draw (lambda (state) state)]
-    [on-key (lambda (state key) (stop-with state))]
-    [name "Visual Test"])
-
-  (display "Does the image match the description? (y/n): ")
-  (flush-output)
-  
-  (define response (string-trim (read-line)))
-  (cond
-    [(string-ci=? response "y") #t]
-    [(string-ci=? response "n") #f]
-    [else 
-     (displayln "Invalid input. Failing test by default.")
-     #f]))
-
-
+;; Suite 6: Visual Rendering Tests
 (define bg (empty-scene 200 200))
 
-;; Suite 6: Visual Rendering Tests
 (define-test-suite visual-suite
   (test-case "Base Particle Rendering (Opaque)"
     (define p (new particle% 
                    [p (position 100 100)] 
                    [v (velocity 0 0)] 
-                   [force-funcs empty] 
                    [lifetime 10.0]))
     (define img (send p draw-on bg))
     (check-true 
@@ -243,10 +205,8 @@
     (define p (new particle% 
                    [p (position 100 100)] 
                    [v (velocity 0 0)] 
-                   [force-funcs empty] 
                    [lifetime 10.0]))
-    ;; Advance time to exactly half the lifetime
-    (send p update! 5.0) 
+    (send p update! 5.0 empty) 
     (define img (send p draw-on bg))
     (check-true 
      (visual-check "You should see a semi-transparent (gray) circle in the center." img)))
@@ -255,29 +215,31 @@
     (define p (new particle% 
                    [p (position 100 100)] 
                    [v (velocity 0 0)] 
-                   [force-funcs empty] 
                    [lifetime 10.0]))
-    ;; Advance time to exceed lifetime
-    (send p update! 10.0) 
+    (send p update! 10.0 empty) 
     (define img (send p draw-on bg))
     (check-true 
      (visual-check "You should see a completely blank white canvas (particle is invisible)." img)))
 
   (test-case "System Rendering (Multiple Particles)"
-    (define p1 (new particle% [p (position 50 50)] [v (velocity 0 0)] [force-funcs empty] [lifetime 10.0]))
-    (define p2 (new particle% [p (position 100 100)] [v (velocity 0 0)] [force-funcs empty] [lifetime 10.0]))
-    (define p3 (new particle% [p (position 150 150)] [v (velocity 0 0)] [force-funcs empty] [lifetime 10.0]))
-    
+    (define p1 (new particle% [p (position 50 50)] [v (velocity 0 0)] [lifetime 10.0]))
+    (define p2 (new particle% [p (position 100 100)] [v (velocity 0 0)] [lifetime 10.0]))
+    (define p3 (new particle% [p (position 150 150)] [v (velocity 0 0)] [lifetime 10.0]))
+
     ;; Set different ages
-    (send p2 update! 5.0)  ; Half faded
-    (send p3 update! 9.0)  ; Almost invisible
-    
+    (send p2 update! 5.0 empty)  ; Half faded
+    (send p3 update! 9.0 empty)  ; Almost invisible
+
     (define particles (list p1 p2 p3))
-    ;; Using your reversed filter-alive behavior, p3 draws first (bottom), p1 draws last (top)
     (define img (draw-all-particles particles bg))
-    
+
     (check-true 
      (visual-check "You should see three circles diagonally: Top-left is solid black, center is gray, bottom-right is very faint." img))))
 
-;; Run the suite
+
+(run-tests struct-suite)
+(run-tests forces-suite)
+(run-tests lifecycle-suite)
+(run-tests physics-suite)
+(run-tests system-suite)
 (run-tests visual-suite)
