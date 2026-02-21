@@ -118,13 +118,26 @@
 
 
 ; make-attractor
+(define (make-attractor ax ay strength)
+  (lambda (pos vel)
+    (define px (position-x pos))
+    (define py (position-y pos))
 
-; tests
+    ;; Need to define the vector pointing from px, py to ax, ay
+    (define dx (- ax px))
+    (define dy (- ay py))
+    ;; Then figure out distance from px, py to ax, ay
+    (define dist (sqrt (+ (* dx dx) (* dy dy))))
+    (define safe-dist (max dist 1.0)) ;; Gemini suggested to avoid paricles shooting off as force approaches inf
 
+    ;; Normalize
+    (define dx-normalized (/ dx safe-dist)) ;; With the idea that dist becomes 1
+    (define dy-normalized (/ dy safe-dist))
 
-; compose-forces
-
-; tests
+    (define force-mag (/ strength (* safe-dist safe-dist))) ;; Inverse square
+    (forceDir (* dx-normalized force-mag) (* dy-normalized force-mag))
+    )
+  )
 
 
 ; 3: Tail Recursion

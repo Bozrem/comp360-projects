@@ -39,7 +39,7 @@
     (define dummy-vel (velocity 5 5))
     (define force (wind dummy-pos dummy-vel))
     (check-equal? (forceDir-d2xdt2 force) 2.5 "Wind should apply to X")
-    (check-equal? (forceDir-d2ydt2 force) -1.0 "Wind should apply to Y")))
+    (check-equal? (forceDir-d2ydt2 force) -1.0 "Wind should apply to Y"))
 
   (test-case "make-friction"
     ;; Testing with a negative coefficient to simulate opposition to movement
@@ -64,6 +64,33 @@
     (check-equal? (forceDir-d2xdt2 force) -1.5 "Air resistance X calculation")
     (check-equal? (forceDir-d2ydt2 force) -2.0 "Air resistance Y calculation"))
 
+  (test-case "make-attractor (normal distance)"
+    ;; Using a 3-4-5 triangle: dist = 5, safe-dist = 5
+    (define attractor (make-attractor 3 4 250)) 
+    (define dummy-pos (position 0 0))
+    (define dummy-vel (velocity 0 0)) ;; Velocity shouldn't matter here
+    (define force (attractor dummy-pos dummy-vel))
+
+    ;; dx-norm = 3/5 = 0.6, dy-norm = 4/5 = 0.8
+    ;; force-mag = 250 / (5^2) = 10
+    ;; F_x = 0.6 * 10 = 6.0
+    ;; F_y = 0.8 * 10 = 8.0
+    (check-within (forceDir-d2xdt2 force) 6.0 0.001 "Attractor X calculation")
+    (check-within (forceDir-d2ydt2 force) 8.0 0.001 "Attractor Y calculation"))
+
+  (test-case "make-attractor (safe-dist clamping)"
+    ;; Distance is 0.5, which is less than 1.0, triggering safe-dist logic
+    (define attractor (make-attractor 0.5 0 100))
+    (define dummy-pos (position 0 0))
+    (define dummy-vel (velocity 0 0))
+    (define force (attractor dummy-pos dummy-vel))
+
+    ;; dx = 0.5. safe-dist = 1.0.
+    ;; dx-norm = 0.5 / 1.0 = 0.5
+    ;; force-mag = 100 / (1.0^2) = 100
+    ;; F_x = 0.5 * 100 = 50.0
+    (check-within (forceDir-d2xdt2 force) 50.0 0.001 "Clamped attractor X calculation")
+    (check-within (forceDir-d2ydt2 force) 0.0 0.001 "Clamped attractor Y calculation")))
 
 ;; Suite 3: Particle Lifecycle
 (define-test-suite lifecycle-suite
