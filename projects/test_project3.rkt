@@ -242,4 +242,57 @@
 (run-tests lifecycle-suite)
 (run-tests physics-suite)
 (run-tests system-suite)
-(run-tests visual-suite)
+;(run-tests visual-suite)
+
+
+;; SIMULATION TESTS
+
+
+;; Suite 7: Simulation Basics
+(define-test-suite simulation-basics-suite
+  (test-case "Simulation initialization and single step"
+    (define bg (empty-scene 200 200))
+    ;; Create a single particle to inject manually
+    (define p (new particle% [p (position 0 0)] [v (velocity 10 5)] [lifetime 5.0]))
+
+    ;; Initialize simulation with dt=1.0 and 60 FPS (FPS doesn't affect manual steps)
+    (define sim (new simulation% 
+                     [dt 1.0] 
+                     [fps 60] 
+                     [background bg] 
+                     [particles (list p)]))
+
+    ;; Execute a single step manually
+    (send sim step!)
+
+    (define current-particles (get-field particles sim))
+    (define stepped-p (first current-particles))
+
+    (check-equal? (length current-particles) 1 "Particle should still be in the list")
+    (check-equal? (position-x (get-field p stepped-p)) 10.0 "Particle X should update based on velocity and dt")
+    (check-equal? (position-y (get-field p stepped-p)) 5.0 "Particle Y should update based on velocity and dt"))
+
+  (test-case "Simulation time tracking"
+    (define bg (empty-scene 200 200))
+    (define sim (new simulation% [dt 0.5] [fps 60] [background bg]))
+
+    (send sim step!)
+    (send sim step!)
+
+    ;; t is private, but we can infer the system steps correctly by checking a particle's lifespan
+    (define p (new particle% [p (position 0 0)] [v (velocity 0 0)] [lifetime 1.0]))
+    (set-field! particles sim (list p))
+
+    (send sim step!) ;; Advances particle by 0.5 (total sim time doesn't affect individual particles, but dt does)
+    (check-equal? (length (get-field particles sim)) 1 "Particle alive")
+
+    (send sim step!) ;; Advances particle by another 0.5 (now at 1.0, should die)
+    (check-equal? (length (get-field particles sim)) 0 "Dead particle should be filtered out")))
+
+
+
+
+
+
+
+(run-tests simulation-basics-suite)

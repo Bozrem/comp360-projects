@@ -221,8 +221,8 @@
 
     (define/public (step!)
       (apply-spawners!)
-      (set! particles (filter-alive particles))
       (for-each (lambda (p) (send p update! dt global-forces)) particles)
+      (set! particles (filter-alive particles))
       (set! t (+ t dt))
       this
     )
