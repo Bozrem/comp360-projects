@@ -24,18 +24,21 @@
 ;;; --- 0a ---
 ;;; How did you prepare for the exam? How long did you spend?
 ;;; Be specific but brief.
-
+#|
+I looked through the midterm early release. Reviewed function definitions of ones I had forgotten,
+and used AI on a couple concepts I was still a little unsure of.
+|#
 
 
 ;;; --- 0b ---
 ;;; If I correctly answer x questions, a fair grade is:
-;;; 0 questions: ???
-;;; 1 question:  ???
-;;; 2 questions: ???
-;;; 3 questions: ???
-;;; 4 questions: ???
-;;; 5 questions: ???
-;;; 6 questions: ???
+;;; 0 questions: 0
+;;; 1 question:  20
+;;; 2 questions: 40
+;;; 3 questions: 60
+;;; 4 questions: 80
+;;; 5 questions: 90
+;;; 6 questions: 100
 
 
 
@@ -44,7 +47,13 @@
 ;;; This will not affect your grade.
 ;;; Consider: lectures/practice, projects, difficulty/clarity,
 ;;; and especially accessibility.
-
+#|
+Though I do like Racket, it has so far felt like this is a Racket class. I think we should have tried to move much quicker through Racket,
+and leave a lot of it on the student to learn. I would have liked more class lectures to be about specific concepts in programming
+languages. I think it would also be really cool if we did case study days on certain languages (day on Rust, Agda, bash/scripting). Also,
+the reason that Racket can be so powerful to a PL class is define-syntax, which literally lets you change the language, but we haven't
+touched that at all.
+|#
 
 
 ;;; ============================================================
