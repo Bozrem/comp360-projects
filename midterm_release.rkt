@@ -67,14 +67,19 @@ touched that at all.
 ;;;
 ;;; See tests for examples.
 
-(define (count-satisfies pred lst)
-  'todo)
+(define (count-satisfies pred lst [acc 0])
+  (cond
+    [(empty? lst) acc]
+    [(pred (car lst))   (count-satisfies pred (cdr lst) (+ acc 1))]
+    [else               (count-satisfies pred (cdr lst) acc)]
+    )
+  )
 
 ;;; Test cases (uncomment to test):
-; (count-satisfies even? '(1 2 3 4 5))          ; => 2
-; (count-satisfies string? '(1 "a" 2 "b" 3))    ; => 2
-; (count-satisfies even? '())                   ; => 0
-; (count-satisfies positive? '(-3 -1 0 2 5))    ; => 2
+(count-satisfies even? '(1 2 3 4 5))          ; => 2
+(count-satisfies string? '(1 "a" 2 "b" 3))    ; => 2
+(count-satisfies even? '())                   ; => 0
+(count-satisfies positive? '(-3 -1 0 2 5))    ; => 2
 
 
 ;;; ============================================================
@@ -91,7 +96,7 @@ touched that at all.
 
 (define x 10)
 
-(let ([x 5]
+(let* ([x 5]
       [y (+ x 1)])
   (+ x y))
 
@@ -102,7 +107,7 @@ touched that at all.
 
 (define a "goodbye")
 
-(let ([a "hello"]
+(let* ([a "hello"]
       [b (string-append a " world")])
   b)
 
@@ -120,7 +125,8 @@ touched that at all.
 ;;; Lambda-version: (map (lambda (x) (+ x 10)) nums)
 ;;; Expected:       '(11 12 13 14 15)
 
-; (map 'todo nums)
+(define add10 (curryr + 10))
+(map add10 nums)
 
 
 ;;; 3b: Raise every number to the 2nd power
@@ -128,7 +134,8 @@ touched that at all.
 ;;; Expected: '(1 4 9 16 25)
 ;;; Hint: (expt base power) — which argument are you fixing?
 
-; (map 'todo nums)
+(define pow2 (curryr expt 2))
+(map pow2 nums)
 
 
 ;;; 3c: Clamp a list of elements according to a clamp function 
@@ -139,8 +146,9 @@ touched that at all.
 ;;; 3-argument problem: curry both lo and hi,
 ;;; leaving only x to be supplied by map.
 (define values '(-5 0 3 7 10 15))
+(define clamp0-10 (curry clamp 0 10))
 
-; (map 'todo values)
+(map clamp0-10 values)
 ;;; Expected: '(0 0 3 7 10 10)  ; clamped to [0, 10]
 
 
@@ -157,11 +165,11 @@ touched that at all.
 
 (define (zip-not-tr lst1 lst2)
   (cond
-    [(null? lst1) lst2]
-    [(null? lst2) lst1]
-    [else (cons (car lst1)
-                (cons (car lst2)
-                      (zip-not-tr (cdr lst1) (cdr lst2))))]))
+    [(null? lst1) lst2] ;; If we've done all of list1, the rest is just list2
+    [(null? lst2) lst1] ;; Same thing the other way around
+    [else (cons (car lst1) ;; Adds the next element from list1 to lower result
+                (cons (car lst2) ;; Adds the next element from list2 to rec result
+                      (zip-not-tr (cdr lst1) (cdr lst2))))])) ;; Recurses with the rest of the lists
 
 ;;; Examples:
 ;;;   (zip-not-tr '(1 2 3) '(a b c))     => '(1 a 2 b 3 c)
@@ -178,14 +186,19 @@ touched that at all.
 ;;;   5. You may need to reverse the accumulator at the end
 ;;; Hint: don't forget about append!
 
-(define (zip lst1 lst2)
-  'todo)
+(define (zip lst1 lst2 [lst3 empty])
+  (cond
+    [(empty? lst1)  (flatten (list lst3 lst2))]
+    [(empty? lst2)  (flatten (list lst3 lst1))]
+    [else           (zip (cdr lst1) (cdr lst2) (append lst3 (list (car lst1) (car lst2))))]
+    )
+  )
 
 ;;; Test cases (uncomment to test):
-; (zip '(1 2 3) '(a b c))     ; => '(1 a 2 b 3 c)
-; (zip '(1 2) '(a b c d))     ; => '(1 a 2 b c d)
-; (zip '() '(x y))            ; => '(x y)
-; (zip '(1 2 3) '())          ; => '(1 2 3)
+(zip '(1 2 3) '(a b c))     ; => '(1 a 2 b 3 c)
+(zip '(1 2) '(a b c d))     ; => '(1 a 2 b c d)
+(zip '() '(x y))            ; => '(x y)
+(zip '(1 2 3) '())          ; => '(1 2 3)
 
 
 ;;; ============================================================
@@ -211,17 +224,28 @@ touched that at all.
 ;;;   (t)   ; => "off"
 
 (define (make-toggle val1 val2)
-  'todo)
+  (define toggle -1)
+
+  (define (func) ;; Lambda wouldnt let me do the set here
+    (set! toggle (* toggle -1))
+    (cond
+      [(= toggle 1) val1]
+      [else         val2]
+      )
+    )
+
+  func
+  )
 
 ;;; Test cases (uncomment to test):
-; (define t (make-toggle "on" "off"))
-; (t)   ; => "on"
-; (t)   ; => "off"
-; (t)   ; => "on"
-; (define t2 (make-toggle 0 1))
-; (t2)  ; => 0
-; (t2)  ; => 1
-; (t)   ; => "off"  (t and t2 are independent)
+(define t (make-toggle "on" "off"))
+(t)   ; => "on"
+(t)   ; => "off"
+(t)   ; => "on"
+(define t2 (make-toggle 0 1))
+(t2)  ; => 0
+(t2)  ; => 1
+(t)   ; => "off"  (t and t2 are independent)
 
 
 ;;; ============================================================
@@ -244,18 +268,26 @@ touched that at all.
 ;;;   (t2 5)  ; => 12   (because 5 -> 6 -> 12)
 
 (define (make-transformer ops)
-  'todo)
+  (define (apply-all x [operations ops]) ;; I feel like there's a builtin for this, but I don't remember
+    (cond
+      [(empty? operations)  x]
+      [else                 (apply-all ((car operations) x) (cdr operations))]
+      )
+    )
+
+  apply-all
+  )
 
 ;;; Test cases (uncomment to test):
-; (define t1 (make-transformer (list add1 add1 add1)))
-; (t 0)    ; => 3
-; (t 10)   ; => 13
+(define t1 (make-transformer (list add1 add1 add1)))
+(t1 0)    ; => 3
+(t1 10)   ; => 13
 ;
-; (define t3 (make-transformer (list add1 (lambda (x) (* x 2)))))
-; (t2 5)   ; => 12
+(define t3 (make-transformer (list add1 (lambda (x) (* x 2)))))
+(t3 5)   ; => 12
 ;
-; (define empty-t (make-transformer '()))
-; (empty-t 42)  ; => 42
+(define empty-t (make-transformer '()))
+(empty-t 42)  ; => 42
 
 
 ;;; 6b: Now WITHOUT using lambda, use make-transformer and
@@ -268,9 +300,12 @@ touched that at all.
 ;;;
 ;;; So (my-transform 3) => "Result: 35"   because 3 -> 4 -> 40 -> 35 -> "35" -> "Result: 35"
 
-; (define my-transform (make-transformer (list 'todo 'todo 'todo 'todo 'todo)))
+(define mul10 (curryr * 10))
+(define sub5 (curryr - 5))
+(define appres (curry string-append "Result: "))
+(define my-transform (make-transformer (list add1 mul10 sub5 number->string appres)))
 
 ;;; Test cases (uncomment to test):
-; (my-transform 3)    ; => 35
-; (my-transform 0)    ; => 5
-; (my-transform 10)   ; => 105
+(my-transform 3)    ; => 35
+(my-transform 0)    ; => 5
+(my-transform 10)   ; => 105
