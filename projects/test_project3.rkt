@@ -290,9 +290,145 @@
     (check-equal? (length (get-field particles sim)) 0 "Dead particle should be filtered out")))
 
 
+;; Visual Simulation Helper
+(define (visual-sim-check description sim)
+  (displayln "\n--- VISUAL SIMULATION TEST ---")
+  (displayln description)
+  (displayln "Opening simulation window... Close the window manually (e.g., click the 'X') to conclude the test and return here.")
+  
+  ;; This will block the thread until the user closes the window
+  (send sim run)
+
+  (display "Did the simulation behave as described? (y/n): ")
+  (flush-output)
+  
+  (define response (string-trim (read-line)))
+  (cond
+    [(string-ci=? response "y") #t]
+    [(string-ci=? response "n") #f]
+    [else 
+     (displayln "Invalid input. Failing test by default.")
+     #f]))
+
+;; Suite 8: Dynamic Visual Simulation Tests
+(define sim-bg (empty-scene 400 400))
+
+(define-test-suite visual-sim-suite
+  
+  (test-case "The Faucet (Delay Spawner + Gravity)"
+    (define sim (new simulation% [dt 1.0] [fps 60] [background sim-bg]))
+    (define base-maker (make-spawner 200 50 -2 2 100)) ;; Drops from near top-center
+    (define faucet-spawner (make-delay-spawner base-maker 10)) ;; 1 particle every 10 frames
+    (define gravity (make-gravity 0.5))
+    
+    (send sim add-spawner! faucet-spawner)
+    (send sim add-force! gravity)
+    
+    (check-true 
+     (visual-sim-check 
+      "You should see particles drip from the top center one by one and accelerate downwards off the screen." 
+      sim)))
+
+  (test-case "The Explosion (Burst Spawner + Friction)"
+    (define sim (new simulation% [dt 1.0] [fps 60] [background sim-bg]))
+    (define base-maker (make-spawner 200 200 -15 15 50)) ;; High random velocity from center
+    (define burst-spawner (make-burst-spawner base-maker 5)) ;; 5 particles per frame
+    (define friction (make-friction 0.05)) ;; Slows them down over time
+    
+    (send sim add-spawner! burst-spawner)
+    (send sim add-force! friction)
+    
+    (check-true 
+     (visual-sim-check 
+      "You should see a continuous explosion from the center. Particles should shoot out fast but slow down noticeably before fading out." 
+      sim)))
+
+  (test-case "The Wind Tunnel (Spawners + Wind + Air Resistance)"
+    (define sim (new simulation% [dt 1.0] [fps 60] [background sim-bg]))
+    ;; Spawns on middle-left with random velocities mostly biased up/down
+    (define base-maker (make-spawner 50 200 -5 5 150)) 
+    (define delay-spawner (make-delay-spawner base-maker 2)) 
+    
+    (define wind (make-wind 0.5 0)) ;; Blows right
+    (define drag (make-air-resistance 0.02)) ;; Caps max speed
+    
+    (send sim add-spawner! delay-spawner)
+    (send sim add-force! wind)
+    (send sim add-force! drag)
+    
+    (check-true 
+     (visual-sim-check 
+      "Particles spawn on the left, get blown to the right by wind, but their speed should visibly cap/stabilize due to air resistance." 
+      sim)))
+
+  (test-case "The Orbit (Burst Spawner + Attractor)"
+    (define sim (new simulation% [dt 1.0] [fps 60] [background sim-bg]))
+    ;; Spawns at top-left with a slight initial rightward velocity to encourage orbiting
+    (define base-maker (make-spawner 100 100 0 5 200)) 
+    (define delay-spawner (make-delay-spawner base-maker 5))
+    
+    ;; Strong attractor in the dead center
+    (define black-hole (make-attractor 200 200 500)) 
+    
+    (send sim add-spawner! delay-spawner)
+    (send sim add-force! black-hole)
+    
+    (check-true 
+     (visual-sim-check 
+      "Particles spawn top-left and should be pulled into a curved orbit around the exact center of the screen." 
+      sim))))
+
+
+;; Suite 9: Orbital Mechanics Math
+(define-test-suite orbit-math-suite
+  
+  (test-case "Ideal circular orbit force calculation"
+    ;; To maintain a circular orbit at distance R=100 with velocity V=10, 
+    ;; the required centripetal acceleration is a = V^2 / R = 100 / 100 = 1.0
+    ;; Inverse square force is F = strength / R^2. 
+    ;; Therefore, 1.0 = strength / 10000, so strength must be 10000.
+    (define attractor (make-attractor 0 0 10000))
+    
+    (define p-pos (position 100 0)) ;; 100 units to the right of center
+    (define p-vel (velocity 0 10))  ;; Moving perfectly tangentially UP
+    (define force (attractor p-pos p-vel))
+    
+    ;; The force vector should point purely left (-X) towards the origin
+    (check-within (forceDir-d2xdt2 force) -1.0 0.001 "Force provides exact centripetal acceleration")
+    (check-within (forceDir-d2ydt2 force) 0.0 0.001 "No force along the tangent line"))
+
+  (test-case "Euler integration drift over a single step"
+    ;; Setup the perfect orbital conditions from the previous test
+    (define p (new particle% [p (position 100 0)] [v (velocity 0 10)] [lifetime 10.0]))
+    (define attractor (make-attractor 0 0 10000))
+    
+    ;; Step forward by dt = 1.0
+    (send p update! 1.0 (list attractor))
+    
+    (define new-x (position-x (get-field p p)))
+    (define new-y (position-y (get-field p p)))
+    (define new-dist (sqrt (+ (* new-x new-x) (* new-y new-y))))
+    
+    ;; Euler math breakdown:
+    ;; v_new = (0, 10) + (-1, 0)*1.0 = (-1, 10)
+    ;; p_new = (100, 0) + (-1, 10)*1.0 = (99, 10)
+    ;; new-dist = sqrt(99^2 + 10^2) = sqrt(9801 + 100) = sqrt(9901)
+    (check-within new-dist (sqrt 9901) 0.001 "Euler integration inherently alters the orbital radius"))
+
+  (test-case "The slingshot effect (large dt near center)"
+    ;; Particle gets close to a strong attractor
+    (define p (new particle% [p (position 2 0)] [v (velocity 0 5)] [lifetime 10.0]))
+    (define attractor (make-attractor 0 0 500)) ;; strength 500
+    
+    ;; Force magnitude = 500 / 2^2 = 125.
+    ;; v_new_x = 0 + (-125 * 1.0) = -125. 
+    (send p update! 1.0 (list attractor))
+    
+    (define vx (velocity-dxdt (get-field v p)))
+    (check-equal? vx -125.0 "Velocity spikes massively when close to the center due to inverse-square law")))
 
 
 
-
-
+(run-tests orbit-math-suite)
+(run-tests visual-sim-suite)
 (run-tests simulation-basics-suite)
