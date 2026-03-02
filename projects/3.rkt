@@ -5,6 +5,7 @@
 (require racket/class)
 (require 2htdp/image)
 (require 2htdp/universe)
+(require lang/posn)
 
 (struct position (x y) #:mutable)
 (struct velocity (dxdt dydt) #:mutable)
@@ -57,7 +58,7 @@
     (define/private (draw)
       (define perc-age  (/ t lifetime))
       (define alpha     (max 0 (* (- 1 perc-age) 255))) ;; To avoid negative alphas
-      (define c         (color 0 0 0 (exact-floor alpha)))
+      (define c         (color 255 42 4 (exact-floor alpha)))
 
       (circle SIZE "solid" c)
     )
@@ -236,3 +237,70 @@
     )
   )
 )
+
+
+(define volcano-color "brown")
+(define crater-color "darkbrown") 
+
+(define trunk
+  (polygon (list (make-posn 70 50)   ; Top-left
+                 (make-posn 130 50)  ; Top-right
+                 (make-posn 180 200) ; Bottom-right
+                 (make-posn 20 200)) ; Bottom-left
+           "solid"
+           volcano-color))
+
+(define canvas
+  (rectangle 200 200 "solid" "transparent"))
+
+(define base-volcano
+  (place-image trunk 100 125 canvas))
+
+(define with-left-flare
+  (add-solid-curve base-volcano
+                   70 50 270 1/2
+                   20 200 180 1/2
+                   volcano-color))
+
+(define with-both-flares
+  (add-solid-curve with-left-flare
+                   130 50 270 1/2
+                   180 200 0 1/2
+                   volcano-color))
+
+(define crater
+  (ellipse 60 20 "solid" crater-color))
+
+(define volcano-bg
+  (place-image crater 100 50 with-both-flares))
+
+
+
+(define volcano-sim (new simulation% [dt 1.0] [fps 60] [background volcano-bg]))
+
+(define (vol-part-spawner life)
+  ;; dx: Small spread left and right (e.g., between -2 and 2)
+  (define (rand-dx) (- (random 5) 2))
+
+  ;; dy: Strictly negative (upward) and much larger magnitude (e.g., between -5 and -10)
+  (define (rand-dy) (- -5 (random 6)))
+
+  (lambda ()
+    (new particle%
+         [p (position 100 50)]
+         [v (velocity (rand-dx) (rand-dy))]
+         [lifetime life]
+      )
+    )
+  )
+
+(define vol-burst (make-burst-spawner (vol-part-spawner 100) 5))
+
+(define drag (make-air-resistance 0.01))
+(define gravity (make-gravity 0.3))
+
+(send volcano-sim add-spawner! vol-burst)
+(send volcano-sim add-force! gravity)
+(send volcano-sim add-force! drag)
+
+(send volcano-sim run)
