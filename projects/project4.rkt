@@ -1,6 +1,8 @@
 #lang br/quicklang
 (require 2htdp/image)
 
+
+
 ;;; HELPERS
 ;; Canvas constants
 (define CANVAS-WIDTH 500)
