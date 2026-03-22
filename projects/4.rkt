@@ -1,6 +1,6 @@
 #lang br/quicklang
 (require 2htdp/image)
-
+(require racket/math) ;; pi
 
 
 ;;; HELPERS
@@ -8,17 +8,15 @@
 (define CANVAS-WIDTH 500)
 (define CANVAS-HEIGHT 500)
 (define BLANK-CANVAS (rectangle CANVAS-WIDTH CANVAS-HEIGHT "solid" "white"))
+
 ;; Turtle movement math
 (define (next-x x angle dist) (+ x (* dist (cos angle))))
 (define (next-y y angle dist) (+ y (* dist (sin angle))))
+
 ;; Draw a line between two points on an image
 (define (draw-line x1 y1 x2 y2 color image)
-  (add-line image x1 y1 x2 y2 color))
-;; Replace element at index i in list lst with value v
-(define (list-set lst i v)
-  (if (= i 0)
-      (cons v (cdr lst))
-      (cons (car lst) (list-set (cdr lst) (- i 1) v))))
+  (add-line image x1 y1 x2 y2 color)) ;; What's the point of this func? it just reorders the args?
+
 ;; Read all Racket-readable tokens from a single line of text
 (define (tokenize line)
   (let loop ([port (open-input-string line)] [acc '()])
@@ -28,27 +26,15 @@
         (loop port (cons tok acc)))))
 
 
-;;; Part 1: Turtle State
-;;;
-;;; State = (list x y angle pen-down? color image pending)
-;;;           idx: 0  1   2      3       4     5      6
+(struct state (x y angle pen? color image pending) #:transparent) ;; Transparent lets me do state-image to access directly
 
-; 1.1: state accessors
-; state-x, state-y, state-angle, state-pen?, state-color, state-image, state-pending
-
-; tests
-
-
-; 1.2: state updaters
-; set-x, set-y, set-angle, set-pen, set-color, set-image, set-pending
-
-; tests
-
+;; Get's are automated with state-, setting is just going to use struct-copy to be cleaner in each command
 
 ; 1.3: initial-state
-; turtle at canvas center, pointing up (angle = -(pi/2)), pen up, color "black", no pending arg
+(define initial-state (state (/ CANVAS-WIDTH 2) (/ CANVAS-HEIGHT 2) (/ pi -2) #f "black" BLANK-CANVAS empty))
+; turtle at canvas center, pointing up (angle = -(pi/2)), pen up, color "black", blank canvas, no pending arg
 
-; tests
+
 
 ;;; Part 2: Reading the Program
 
