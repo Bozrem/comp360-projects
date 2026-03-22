@@ -39,9 +39,10 @@
 ;;; Part 2: Reading the Program
 
 (define (good-line? line)
+  (define trimmed (string-trim line))
   (cond
-    [(empty? line) #f]
-    [(equal? (first line) #\;) #f]
+    [(string=? trimmed "") #f]
+    [(string-prefix? trimmed ";") #f]
     [else #t]
   )
 )
@@ -70,10 +71,43 @@
 
 ;;; Part 3: Command Dispatch
 
+(define (forward s steps)
+  
+)
+
+(define (back s steps)
+  
+)
+
+(define (right s degs)
+  
+)
+
+(define (left s degs)
+  
+)
+
 ; 3.1: handle-cmd
 ; Dispatch on: number, FORWARD, BACK, RIGHT, LEFT, PENDOWN, PENUP
 ; Return the updated state for each case.
-
+(define (handle-cmd s token)
+  (cond
+    [(number? token) (case (state-pending s)
+      [(FORWARD)  (forward s token)]
+      [(BACK)     (back s token)]
+      [(RIGHT)    (right s token)]
+      [(LEFT)     (left s token)]
+    )]
+    [else (case token
+      [(FORWARD)  (struct-copy state s [pending token])]
+      [(BACK)     (struct-copy state s [pending token])]
+      [(RIGHT)    (struct-copy state s [pending token])]
+      [(LEFT)     (struct-copy state s [pending token])]
+      [(PENDOWN)  (struct-copy state s [pen? #t])]
+      [(PENUP)    (struct-copy state s [pen? #f])]
+    )]
+  )
+)
 ; tests
 
 
@@ -81,7 +115,13 @@
 ; Use for/fold to process all tokens left to right, starting from initial-state.
 ; (This is the direct parallel to handle-args in the funstacker example.)
 
-(define (handle-turtle-cmds . tokens) 'todo )
+(define (handle-turtle-cmds . tokens)
+  (for/fold
+    ([s initial-state])
+    ([tok (in-list tokens)])
+    (handle-cmd s tok)
+  )
+)
 (provide handle-turtle-cmds)
 
 ; tests (write a .turtle file and run it!)
