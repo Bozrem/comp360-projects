@@ -28,7 +28,7 @@
 
 (struct state (x y angle pen? color image pending) #:transparent) ;; Transparent lets me do state-image to access directly
 
-;; Get's are automated with state-, setting is just going to use struct-copy to be cleaner in each command
+;; Gets are automated with state-, setting is just going to use struct-copy to be cleaner in each command
 
 ; 1.3: initial-state
 (define initial-state (state (/ CANVAS-WIDTH 2) (/ CANVAS-HEIGHT 2) (/ pi -2) #f "black" BLANK-CANVAS empty))
@@ -38,13 +38,21 @@
 
 ;;; Part 2: Reading the Program
 
+(define (good-line? line)
+  (cond
+    [(empty? line) #f]
+    [(equal? (first line) #\;) #f]
+    [else #t]
+  )
+)
+
 ;; THE READER
 ;; read-syntax is called by Racket when a file beginning with #lang "project4.rkt" is opened.
 ;; Complete the two missing definitions below.
 (define (read-syntax path port)
   (define src-lines (port->lines port))
-  (define filtered 'todo )   ; filter out blank lines and lines starting with ";"
-  (define src-datums 'todo ) ; tokenize each filtered line, then flatten into one list
+  (define filtered (filter good-line? src-lines))   ; filter out blank lines and lines starting with ";"
+  (define src-datums (apply append (map tokenize filtered))) ; tokenize each filtered line, then flatten into one list
   (define module-datum
     `(module turtle-mod "project4.rkt"
        (handle-turtle-cmds ,@src-datums)))
