@@ -13,10 +13,6 @@
 (define (next-x x angle dist) (+ x (* dist (cos angle))))
 (define (next-y y angle dist) (+ y (* dist (sin angle))))
 
-;; Draw a line between two points on an image
-(define (draw-line x1 y1 x2 y2 color image)
-  (add-line image x1 y1 x2 y2 color)) ;; What's the point of this func? it just reorders the args?
-
 ;; Read all Racket-readable tokens from a single line of text
 (define (tokenize line)
   (let loop ([port (open-input-string line)] [acc '()])
@@ -30,14 +26,12 @@
 
 ;; Gets are automated with state-, setting is just going to use struct-copy to be cleaner in each command
 
-; 1.3: initial-state
 (define initial-state (state (/ CANVAS-WIDTH 2) (/ CANVAS-HEIGHT 2) (/ pi -2) #f "black" BLANK-CANVAS empty))
 ; turtle at canvas center, pointing up (angle = -(pi/2)), pen up, color "black", blank canvas, no pending arg
 
 
 
 ;;; Part 2: Reading the Program
-
 (define (good-line? line)
   (define trimmed (string-trim line))
   (cond
@@ -55,7 +49,7 @@
   (define filtered (filter good-line? src-lines))   ; filter out blank lines and lines starting with ";"
   (define src-datums (apply append (map tokenize filtered))) ; tokenize each filtered line, then flatten into one list
   (define module-datum
-    `(module turtle-mod "project4.rkt"
+    `(module turtle-mod "4.rkt"
        (handle-turtle-cmds ,@src-datums)))
   (datum->syntax #f module-datum))
 (provide read-syntax)
@@ -72,19 +66,28 @@
 ;;; Part 3: Command Dispatch
 
 (define (forward s steps)
-  
+  (define old-x (state-x s))
+  (define old-y (state-y s))
+
+  (define new-x (next-x old-x (state-angle s) steps))
+  (define new-y (next-y old-y (state-angle s) steps))
+  (define new-image (if (state-pen? s)
+                        (add-line (state-image s) old-x old-y new-x new-y (state-color s))
+                        (state-image s)))
+
+  (struct-copy state s [x new-x] [y new-y] [image new-image])
 )
 
 (define (back s steps)
-  
+  (forward s (* -1 steps))
 )
 
 (define (right s degs)
-  
+  (struct-copy state s [angle (+ (state-angle s) degs)])
 )
 
 (define (left s degs)
-  
+  (struct-copy state s [angle (- (state-angle s) degs)])
 )
 
 ; 3.1: handle-cmd
