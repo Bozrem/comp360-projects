@@ -97,28 +97,57 @@
   (struct-copy state s [angle (- (state-angle s) rads)])
 )
 
+(define (setpos s new-x new-y)
+  (struct-copy state s [x new-x] [y new-y])
+)
+
+
 ; 3.1: handle-cmd
-; Dispatch on: number, FORWARD, BACK, RIGHT, LEFT, PENDOWN, PENUP
-; Return the updated state for each case.
 (define (handle-cmd s token)
   (cond
-    [(number? token) (case (state-pending s)
-      [(FORWARD)  (forward s token)]
-      [(BACK)     (back s token)]
-      [(RIGHT)    (right s token)]
-      [(LEFT)     (left s token)]
-    )]
+    ;; Argument handling
+    [(number? token)
+      (define p (state-pending s))
+      (cond
+        [(empty? p) s]
+        [else (case (first p)
+          [(FORWARD)  (struct-copy state (forward s token) [pending empty])]
+          [(BACK)     (struct-copy state (back s token) [pending empty])]
+          [(RIGHT)    (struct-copy state (right s token) [pending empty])]
+          [(LEFT)     (struct-copy state (left s token) [pending empty])]
+          [(SETPOS)   (cond
+            [(= (length p) 1) (struct-copy state s [pending (list 'SETPOS token)])]
+            [(= (length p) 2) (struct-copy state (setpos s (second p) token) [pending empty])]
+            [else s]
+          )]
+          [else s]
+        )]
+      )
+    ]
+
+    ;; Color argument handling
+    [(and (symbol? token) (equal? (state-pending s) (list 'COLOR)))
+      (struct-copy state s [color (symbol->string token)] [pending empty])
+    ]
+
+    ;; Command handling
     [else (case token
-      [(FORWARD)  (struct-copy state s [pending token])]
-      [(BACK)     (struct-copy state s [pending token])]
-      [(RIGHT)    (struct-copy state s [pending token])]
-      [(LEFT)     (struct-copy state s [pending token])]
-      [(PENDOWN)  (struct-copy state s [pen? #t])]
-      [(PENUP)    (struct-copy state s [pen? #f])]
+       [(FORWARD BACK RIGHT LEFT COLOR SETPOS) (struct-copy state s [pending (list token)])]
+       [(PENDOWN) (struct-copy state s [pen? #t])]
+       [(PENUP)   (struct-copy state s [pen? #f])]
+       [else s]
     )]
   )
 )
-; tests
+;; The logic here:
+;;  If given PENUP or PENDOWN, change the state immediately
+;;  If given other commands, set them to pending
+;;  If given a number:
+;;    If any single arg commands are pending run them
+;;    If SETPOS is pending:
+;;      If another number is also already pending, use both in a setpos command
+;;      Otherwise, add this number to pending
+;;  If given a token and COLOR is pending, set the token as color
 
 
 ; 3.2: handle-turtle-cmds
@@ -133,23 +162,3 @@
   )
 )
 (provide handle-turtle-cmds)
-
-; tests (write a .turtle file and run it!)
-
-
-;;; Part 4: Extensions
-
-; 4.1: COLOR
-; Add a COLOR command. Decide how to handle color-name symbols in handle-cmd.
-
-; 4.2: BACK and SETPOS
-
-; 4.3: REPEAT (stretch goal)
-; expand-repeats: list of tokens -> list of tokens with REPEAT...END blocks expanded
-
-; (define (expand-repeats tokens) ...)
-
-
-;;; Part 5: Your Logo Program
-;;; Write your program in a separate .turtle file.
-
