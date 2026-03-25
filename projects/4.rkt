@@ -1,5 +1,6 @@
 #lang br/quicklang
 (require 2htdp/image)
+(require 2htdp/universe)
 (require racket/math) ;; pi
 
 
@@ -50,16 +51,20 @@
   (define src-datums (apply append (map tokenize filtered))) ; tokenize each filtered line, then flatten into one list
   (define module-datum
     `(module turtle-mod "4.rkt"
-       (handle-turtle-cmds ,@src-datums)))
-  (datum->syntax #f module-datum))
+       (handle-turtle-cmds ',src-datums)))
+  (datum->syntax #'read-syntax module-datum))
 (provide read-syntax)
 
+(define (turtle-show-image img)
+  (big-bang img
+    [to-draw (λ (w) w)]))
+(provide turtle-show-image)
 
 ;; THE EXPANDER
-;; module-begin: calls handle-turtle-cmds, extracts the final image, displays it
+;; module-begin: runs the program, then opens the result in big-bang
 (define-macro (turtle-module-begin EXPR)
   #'(#%module-begin
-     (display (state-image EXPR))))
+     (turtle-show-image (state-image EXPR))))
 (provide (rename-out [turtle-module-begin #%module-begin]))
 
 
@@ -83,11 +88,13 @@
 )
 
 (define (right s degs)
-  (struct-copy state s [angle (+ (state-angle s) degs)])
+  (define rads (* degs (/ pi 180)))
+  (struct-copy state s [angle (+ (state-angle s) rads)])
 )
 
 (define (left s degs)
-  (struct-copy state s [angle (- (state-angle s) degs)])
+  (define rads (* degs (/ pi 180)))
+  (struct-copy state s [angle (- (state-angle s) rads)])
 )
 
 ; 3.1: handle-cmd
@@ -118,7 +125,7 @@
 ; Use for/fold to process all tokens left to right, starting from initial-state.
 ; (This is the direct parallel to handle-args in the funstacker example.)
 
-(define (handle-turtle-cmds . tokens)
+(define (handle-turtle-cmds tokens)
   (for/fold
     ([s initial-state])
     ([tok (in-list tokens)])
