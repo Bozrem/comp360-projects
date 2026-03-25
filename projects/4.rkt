@@ -8,7 +8,7 @@
 ;; Canvas constants
 (define CANVAS-WIDTH 500)
 (define CANVAS-HEIGHT 500)
-(define BLANK-CANVAS (rectangle CANVAS-WIDTH CANVAS-HEIGHT "solid" "white"))
+(define BLANK-CANVAS (rectangle CANVAS-WIDTH CANVAS-HEIGHT "solid" "gray"))
 
 ;; Turtle movement math
 (define (next-x x angle dist) (+ x (* dist (cos angle))))
